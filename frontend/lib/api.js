@@ -31,6 +31,7 @@ async function request(path, options = {}) {
   };
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  
 
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
