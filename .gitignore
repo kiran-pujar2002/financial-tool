@@ -8,3 +8,5 @@ backend/reports/
 backend/node_modules/
 frontend/node_modules/
 frontend/.next/
+.vercel
+.env*
