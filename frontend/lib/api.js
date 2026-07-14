@@ -1,5 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+console.log('api url',process.env.NEXT_PUBLIC_API_URL)
+
 class ApiError extends Error {
   constructor(status, message) {
     super(message);
