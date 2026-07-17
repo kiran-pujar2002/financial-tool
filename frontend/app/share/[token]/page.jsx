@@ -151,7 +151,7 @@ export default function ShareViewPage() {
                 <div className="text-center">
                     <AlertCircle size={48} className="text-red-600 mx-auto mb-4" />
                     <h2 className="text-xl font-bold text-slate-900">Report not found</h2>
-                    <p className="text-sm text-slate-500 mt-1">The report you're looking for doesn't exist.</p>
+                    <p className="text-sm text-slate-500">The report you&apos;re looking for doesn&apos;t exist.</p>
                 </div>
             </div>
         );

@@ -336,9 +336,7 @@ export default function BrandingSettingsPage() {
                                         Remove logo
                                     </button>
                                 )}
-                                <p className="text-xs text-slate-500 mt-2">
-                                    PNG, JPG, or SVG • Max 5MB
-                                </p>
+<p className="text-xs text-slate-500 mt-2">PNG, JPG, or SVG • Max 5MB</p>
                             </div>
                         </div>
                     </div>

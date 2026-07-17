@@ -387,9 +387,9 @@ export default function ValuationPage() {
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 text-center">
                                 <BarChart3 size={48} className="text-slate-300 mx-auto mb-3" />
                                 <h3 className="font-semibold text-slate-900">No Valuation Yet</h3>
-                                <p className="text-sm text-slate-500 mt-1">
-                                    Configure the valuation settings and click calculate.
-                                </p>
+<p className="text-sm text-slate-500 mt-1">
+  Configure the valuation settings and click calculate.
+</p>
                             </div>
                         )}
                     </div>
