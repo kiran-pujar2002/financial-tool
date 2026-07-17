@@ -86,7 +86,7 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Reports</h1>
             <p className="text-sm text-slate-500 mt-1">
-              Every QOE report you've started, in progress, or delivered.
+               Every QOE report you&apos;ve started, in progress, or delivered.
             </p>
           </div>
           <Link

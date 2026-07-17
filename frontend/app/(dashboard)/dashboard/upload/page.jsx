@@ -275,7 +275,7 @@ export default function UploadPage() {
           </div> */}
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">New Report</h1>
           <p className="text-sm sm:text-base text-slate-500 mt-2">
-            Upload a CSV or Excel export of the business's P&L. We'll categorize every line item and flag likely add-backs automatically.
+              Upload a CSV or Excel export of the business&apos;s P&amp;L. We&apos;ll categorize every line item and flag likely add-backs automatically.
           </p>
         </div>
 
