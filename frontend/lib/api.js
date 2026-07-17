@@ -1,6 +1,6 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-console.log('api url',process.env.NEXT_PUBLIC_API_URL)
+console.log('api url', process.env.NEXT_PUBLIC_API_URL);
 
 class ApiError extends Error {
   constructor(status, message) {
@@ -31,7 +31,6 @@ async function request(path, options = {}) {
   };
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
-  
 
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
@@ -66,6 +65,18 @@ export const api = {
 
   me: () => request('/api/auth/me'),
 
+  updateProfile: (data) =>
+    request('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+
+  changePassword: (data) =>
+    request('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
   // ============================================
   // REPORT APIs
   // ============================================
@@ -99,87 +110,179 @@ export const api = {
     request('/api/payments/verify', { method: 'POST', body: JSON.stringify(data) }),
 
   // ============================================
-  // 🔥 NEW: EDITOR APIs
+  // VALUATION APIs
   // ============================================
 
-  /**
-   * Get draft data for a report
-   * @param {string} reportId - The report ID
-   * @returns {Promise} Report draft data
-   */
+  valuation: {
+    getMultiples: () => request('/api/valuation/multiples'),
+    getIndustryMultiple: (industry) => request(`/api/valuation/multiples/${encodeURIComponent(industry)}`),
+    calculate: (data) => request('/api/valuation/calculate', { method: 'POST', body: JSON.stringify(data) }),
+    getHistory: (reportId) => request(`/api/valuation/history/${reportId}`),
+    generateReport: (data) => request('/api/valuation/generate-report', { method: 'POST', body: JSON.stringify(data) }),
+  },
+
+  // ============================================
+  // EDITOR APIs
+  // ============================================
+
   getEditorDraft: (reportId) =>
     request(`/api/editor/${reportId}/draft`),
 
-  /**
-   * Save draft data for a report
-   * @param {string} reportId - The report ID
-   * @param {object} data - { draftData, editorStatus }
-   * @returns {Promise} Updated report
-   */
   saveEditorDraft: (reportId, data) =>
     request(`/api/editor/${reportId}/draft`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  /**
-   * Finalize report and proceed to payment
-   * @param {string} reportId - The report ID
-   * @param {object} data - { finalizedData }
-   * @returns {Promise} Finalized report
-   */
+  bulkUpdateTransactions: (reportId, updates) =>
+    request(`/api/editor/${reportId}/transactions/bulk`, {
+      method: 'POST',
+      body: JSON.stringify({ updates }),
+    }),
+
   finalizeReport: (reportId, data) =>
     request(`/api/editor/${reportId}/finalize`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  // ============================================
-  // 🔥 NEW: VALUATION APIs
-  // ============================================
+  getVersionHistory: (reportId) =>
+    request(`/api/editor/${reportId}/versions`),
 
-  /**
-   * Get all industry valuation multiples
-   * @returns {Promise} List of industry multiples
-   */
-  getValuationMultiples: () =>
-    request('/api/valuation/multiples'),
+  getVersion: (reportId, versionId) =>
+    request(`/api/editor/${reportId}/versions/${versionId}`),
 
-  /**
-   * Get valuation multiples for a specific industry
-   * @param {string} industry - Industry name
-   * @returns {Promise} Industry multiples
-   */
-  getIndustryMultiple: (industry) =>
-    request(`/api/valuation/multiples/${encodeURIComponent(industry)}`),
-
-  /**
-   * Calculate business valuation
-   * @param {object} data - { reportId, method, multiple, riskFactors }
-   * @returns {Promise} Valuation result
-   */
-  calculateValuation: (data) =>
-    request('/api/valuation/calculate', {
+  restoreVersion: (reportId, versionId, data) =>
+    request(`/api/editor/${reportId}/versions/${versionId}/restore`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  /**
-   * Get valuation history for a report
-   * @param {string} reportId - The report ID
-   * @returns {Promise} Valuation history
-   */
-  getValuationHistory: (reportId) =>
-    request(`/api/valuation/history/${reportId}`),
+  createCustomCategory: (data) =>
+    request('/api/editor/custom-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
-  /**
-   * Get comparable transactions
-   * @param {object} params - { industry, minSize, maxSize }
-   * @returns {Promise} Comparable transactions
-   */
-  getComparableTransactions: (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return request(`/api/valuation/comparable${queryString ? '?' + queryString : ''}`);
+  updateCustomCategory: (id, data) =>
+    request(`/api/editor/custom-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteCustomCategory: (id) =>
+    request(`/api/editor/custom-categories/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // ============================================
+  // BRANDING APIs
+  // ============================================
+
+  branding: {
+    get: () => request('/api/branding'),
+    
+    update: (data) => 
+      request('/api/branding', { 
+        method: 'PUT', 
+        body: JSON.stringify(data) 
+      }),
+    
+    uploadLogo: (formData) => 
+      request('/api/branding/logo', { 
+        method: 'POST', 
+        body: formData 
+      }),
+    
+    removeLogo: () => 
+      request('/api/branding/logo', { 
+        method: 'DELETE' 
+      }),
+  },
+
+  // ============================================
+  // CIM APIs
+  // ============================================
+
+  cim: {
+    generate: (data) => request('/api/cim/generate', { 
+      method: 'POST', 
+      body: JSON.stringify(data) 
+    }),
+    download: (filename) => {
+      const token = getToken();
+      return fetch(`${API_URL}/api/cim/download/${filename}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    },
+  },
+
+  // ============================================
+  // DUE DILIGENCE APIs
+  // ============================================
+
+  dd: {
+    getTemplates: () => request('/api/dd/templates'),
+    getProgress: (reportId) => request(`/api/dd/progress/${reportId}`),
+    updateProgress: (reportId, itemId, data) => 
+      request(`/api/dd/progress/${reportId}/${itemId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      }),
+    uploadDocument: (progressId, formData) =>
+      request(`/api/dd/documents/${progressId}`, {
+        method: 'POST',
+        body: formData
+      }),
+    getDocuments: (progressId) => 
+      request(`/api/dd/documents/${progressId}`),
+  },
+
+  // ============================================
+  // SHARE APIs
+  // ============================================
+
+  share: {
+    create: (data) => request('/api/share', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    
+    getLinks: (reportId) => request(`/api/share/${reportId}`),
+    
+    revoke: (linkId) => request(`/api/share/${linkId}`, {
+      method: 'DELETE'
+    }),
+    
+    getAnalytics: (linkId) => request(`/api/share/analytics/${linkId}`),
+    
+    getPublic: async (token, password) => {
+      const url = `${API_URL}/api/share/public/${token}${password ? `?password=${encodeURIComponent(password)}` : ''}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (response.status === 401 && data.requiresPassword) {
+          const error = new Error('Password required');
+          error.status = 401;
+          error.requiresPassword = true;
+          throw error;
+        }
+        throw new Error(data.error || 'Failed to load report');
+      }
+      
+      return data;
+    },
+    
+    download: (token) => {
+      return fetch(`${API_URL}/api/share/download/${token}`).then(res => {
+        if (!res.ok) throw new Error('Download failed');
+        return res.blob();
+      });
+    },
   },
 };
 

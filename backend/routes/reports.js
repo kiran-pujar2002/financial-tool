@@ -1,3 +1,4 @@
+// routes/reports.js
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -8,7 +9,12 @@ const { query, getClient } = require('../config/db');
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler, HttpError } = require('../middleware/errorHandler');
 const { parseFinancialFile } = require('../services/fileParser');
-const { categorizeAndDetectAddbacks, generateExecutiveSummary } = require('../services/aiProcessor');
+const { 
+    categorizeAndDetectAddbacks, 
+    generateExecutiveSummary, 
+    fallbackCategorization,
+    isQuotaError 
+} = require('../services/aiProcessor');
 const { computeMetrics, buildAddbackSchedule } = require('../utils/calculations');
 const { generateReportPdf } = require('../services/pdfGenerator');
 
@@ -23,6 +29,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => cb(null, `${uuidv4()}${path.extname(file.originalname)}`),
 });
+
 const upload = multer({
   storage,
   limits: { fileSize: 25 * 1024 * 1024 },
@@ -33,6 +40,9 @@ const upload = multer({
   },
 });
 
+// ============================================================
+// POST /api/reports/upload - Upload report
+// ============================================================
 router.post('/upload', authenticate, upload.single('file'), asyncHandler(async (req, res) => {
   if (!req.file) throw new HttpError(400, 'No file uploaded');
 
@@ -48,6 +58,7 @@ router.post('/upload', authenticate, upload.single('file'), asyncHandler(async (
 
   const report = result.rows[0];
 
+  // Process report asynchronously
   processReport(report.id).catch((err) => {
     console.error(`Report ${report.id} processing failed:`, err);
     query('UPDATE reports SET status = $1, error_message = $2 WHERE id = $3',
@@ -57,71 +68,274 @@ router.post('/upload', authenticate, upload.single('file'), asyncHandler(async (
   res.status(202).json({ report });
 }));
 
+// ============================================================
+// Process Report - AI Categorization with Full Validation
+// ============================================================
 async function processReport(reportId) {
-  await query("UPDATE reports SET status = 'parsing' WHERE id = $1", [reportId]);
-
-  const reportRes = await query('SELECT * FROM reports WHERE id = $1', [reportId]);
-  const report = reportRes.rows[0];
-  if (!report) throw new Error('Report not found');
-
-  const rawTransactions = parseFinancialFile(report.source_file_path);
-  if (rawTransactions.length > 2000) {
-    throw new Error('File has more than 2000 transactions; please split into smaller periods');
-  }
-
-  await query("UPDATE reports SET status = 'categorizing' WHERE id = $1", [reportId]);
-
-  const categorized = await categorizeAndDetectAddbacks(rawTransactions, {
-    businessName: report.business_name,
-    industry: report.industry,
-  });
-
-  const metrics = computeMetrics(categorized);
-  const addbackSchedule = buildAddbackSchedule(categorized);
-  const executiveSummary = await generateExecutiveSummary(metrics, {
-    businessName: report.business_name,
-    industry: report.industry,
-  });
-
-  const client = await getClient();
   try {
-    await client.query('BEGIN');
+    await query("UPDATE reports SET status = 'parsing' WHERE id = $1", [reportId]);
 
-    for (const t of categorized) {
-      await client.query(
-        `INSERT INTO transactions (report_id, txn_date, description, amount, raw_category, category, is_addback, addback_reason, confidence)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [reportId, t.date || null, t.description, t.amount, t.rawCategory || null, t.category, t.isAddback, t.addbackReason, t.confidence]
+    const reportRes = await query('SELECT * FROM reports WHERE id = $1', [reportId]);
+    const report = reportRes.rows[0];
+    if (!report) throw new Error('Report not found');
+
+    // ✅ Parse and validate the financial file
+    let rawTransactions;
+    try {
+      rawTransactions = parseFinancialFile(report.source_file_path);
+    } catch (parseErr) {
+      console.error('❌ File parsing/validation error:', parseErr.message);
+      
+      // Check if it's a validation error (contains "Invalid financial file")
+      const errorMessage = parseErr.message.includes('Invalid financial file') 
+        ? parseErr.message 
+        : `File validation failed: ${parseErr.message}`;
+      
+      await query(
+        `UPDATE reports SET 
+          status = 'failed', 
+          error_message = $1 
+         WHERE id = $2`,
+        [errorMessage, reportId]
       );
+      return; // ✅ Stop processing
     }
 
-    for (const a of addbackSchedule) {
-      await client.query(
-        `INSERT INTO addback_schedule (report_id, label, category, amount, justification, transaction_count)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [reportId, a.label, a.category, a.amount, a.justification, a.count]
+    // ✅ Check transaction count
+    if (rawTransactions.length > 2000) {
+      const errorMessage = 'File has more than 2000 transactions. Please split into smaller periods (max 2000 transactions per report).';
+      await query(
+        `UPDATE reports SET 
+          status = 'failed', 
+          error_message = $1 
+         WHERE id = $2`,
+        [errorMessage, reportId]
       );
+      return;
     }
 
-    await client.query(
-      `UPDATE reports SET
-        status = 'ready_for_review',
-        total_revenue = $1, total_expenses = $2, net_income = $3,
-        ebitda = $4, sde = $5, total_addbacks = $6, ai_summary = $7
-       WHERE id = $8`,
-      [metrics.totalRevenue, metrics.totalExpenses, metrics.netIncome,
-       metrics.ebitda, metrics.sde, metrics.totalAddbacks, executiveSummary, reportId]
-    );
+    // ✅ Check minimum transactions
+    if (rawTransactions.length < 3) {
+      const errorMessage = 'File contains too few transactions (minimum 3 required). Please ensure this is a valid financial statement.';
+      await query(
+        `UPDATE reports SET 
+          status = 'failed', 
+          error_message = $1 
+         WHERE id = $2`,
+        [errorMessage, reportId]
+      );
+      return;
+    }
 
-    await client.query('COMMIT');
+    console.log(`📊 Processing ${rawTransactions.length} transactions for report ${reportId}`);
+
+    await query("UPDATE reports SET status = 'categorizing' WHERE id = $1", [reportId]);
+
+    // ============================================================
+    // AI CATEGORIZATION
+    // ============================================================
+    let categorized;
+    let executiveSummary;
+    
+    try {
+      categorized = await categorizeAndDetectAddbacks(rawTransactions, {
+        businessName: report.business_name,
+        industry: report.industry,
+      });
+    } catch (aiErr) {
+      // ✅ Check if it's a quota error - stop processing and show friendly message
+      if (isQuotaError(aiErr) || aiErr.message === 'AI_QUOTA_EXHAUSTED') {
+        console.error('❌ AI quota exhausted for report:', reportId);
+        
+        const errorMessage = 
+          'AI token quota exhausted. Please enable billing in Google AI Studio (https://aistudio.google.com/) to continue processing reports.\n\n' +
+          'If you need immediate processing, try:\n' +
+          '1. Using a different Google Cloud project\n' +
+          '2. Waiting for quota to reset (usually 24 hours)\n' +
+          '3. Contacting support for increased limits';
+        
+        await query(
+          `UPDATE reports SET 
+            status = 'failed', 
+            error_message = $1 
+           WHERE id = $2`,
+          [errorMessage, reportId]
+        );
+        
+        return; // ✅ Stop processing - don't use fallback for quota errors
+      }
+      
+      // ✅ Other AI errors - use fallback
+      console.warn('⚠️ AI categorization failed, using fallback:', aiErr.message);
+      categorized = fallbackCategorization(rawTransactions);
+    }
+
+    // ✅ Ensure we have categorized data
+    if (!categorized || categorized.length === 0) {
+      throw new Error('Categorization failed - no data available');
+    }
+
+    // ============================================================
+    // COMPUTE METRICS
+    // ============================================================
+    const metrics = computeMetrics(categorized);
+    const addbackSchedule = buildAddbackSchedule(categorized);
+    
+    // ============================================================
+    // GENERATE EXECUTIVE SUMMARY
+    // ============================================================
+    try {
+      executiveSummary = await generateExecutiveSummary(metrics, {
+        businessName: report.business_name,
+        industry: report.industry,
+      });
+    } catch (summaryErr) {
+      // ✅ If quota error on summary, use fallback without retrying
+      if (isQuotaError(summaryErr)) {
+        console.warn('⚠️ AI quota exhausted for summary. Using fallback.');
+        executiveSummary = generateFallbackSummary(metrics, report);
+      } else {
+        console.warn('⚠️ Failed to generate AI summary:', summaryErr.message);
+        executiveSummary = generateFallbackSummary(metrics, report);
+      }
+    }
+
+    // ============================================================
+    // SAVE TO DATABASE
+    // ============================================================
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+
+      // Insert transactions
+      for (const t of categorized) {
+        await client.query(
+          `INSERT INTO transactions (report_id, txn_date, description, amount, raw_category, category, is_addback, addback_reason, confidence)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [reportId, t.date || null, t.description, t.amount, t.rawCategory || null, t.category, t.isAddback, t.addbackReason, t.confidence]
+        );
+      }
+
+      // Insert addback schedule
+      for (const a of addbackSchedule) {
+        await client.query(
+          `INSERT INTO addback_schedule (report_id, label, category, amount, justification, transaction_count)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [reportId, a.label, a.category, a.amount, a.justification, a.count]
+        );
+      }
+
+      // Update report with metrics
+      await client.query(
+        `UPDATE reports SET
+          status = 'ready_for_review',
+          total_revenue = $1, 
+          total_expenses = $2, 
+          net_income = $3,
+          ebitda = $4, 
+          sde = $5, 
+          total_addbacks = $6, 
+          ai_summary = $7,
+          error_message = NULL
+         WHERE id = $8`,
+        [
+          metrics.totalRevenue, 
+          metrics.totalExpenses, 
+          metrics.netIncome,
+          metrics.ebitda, 
+          metrics.sde, 
+          metrics.totalAddbacks, 
+          executiveSummary, 
+          reportId
+        ]
+      );
+
+      await client.query('COMMIT');
+      console.log(`✅ Report ${reportId} processed successfully with ${categorized.length} transactions.`);
+      
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+    
   } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
+    console.error(`❌ Report ${reportId} processing failed:`, err);
+    
+    // ✅ Don't overwrite quota or validation error messages if they're already set
+    const errorMessage = err.message || 'Processing failed';
+    
+    // Check if we already set a specific error message (quota, validation, etc.)
+    const existingError = await query(
+      'SELECT error_message FROM reports WHERE id = $1',
+      [reportId]
+    );
+    
+    // Only update if no specific error message was set
+    if (!existingError.rows[0]?.error_message) {
+      await query(
+        'UPDATE reports SET status = $1, error_message = $2 WHERE id = $3',
+        ['failed', errorMessage, reportId]
+      );
+    }
   }
 }
 
+// ============================================================
+// Helper: Generate Fallback Summary (No AI required)
+// ============================================================
+function generateFallbackSummary(metrics, report) {
+  const revenue = metrics.totalRevenue || 0;
+  const ebitda = metrics.ebitda || 0;
+  const sde = metrics.sde || 0;
+  const addbacks = metrics.totalAddbacks || 0;
+
+  const formatCurrency = (value) => {
+    if (!value) return '₹0';
+    return '₹' + Number(value).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  };
+
+  let summary = `${report.business_name || 'The business'} generated ${formatCurrency(revenue)} in revenue with EBITDA of ${formatCurrency(ebitda)} and Seller's Discretionary Earnings (SDE) of ${formatCurrency(sde)}.`;
+
+  if (addbacks > 0) {
+    summary += ` Add-backs totaling ${formatCurrency(addbacks)} were identified as personal, discretionary, or non-recurring expenses.`;
+  } else {
+    summary += ` No significant add-backs were identified in the financial records.`;
+  }
+
+  return summary;
+}
+
+
+// ============================================================
+// Helper: Generate Fallback Summary (No AI required)
+// ============================================================
+function generateFallbackSummary(metrics, report) {
+  const revenue = metrics.totalRevenue || 0;
+  const ebitda = metrics.ebitda || 0;
+  const sde = metrics.sde || 0;
+  const addbacks = metrics.totalAddbacks || 0;
+
+  const formatCurrency = (value) => {
+    if (!value) return '₹0';
+    return '₹' + Number(value).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  };
+
+  let summary = `${report.business_name || 'The business'} generated ${formatCurrency(revenue)} in revenue with EBITDA of ${formatCurrency(ebitda)} and Seller's Discretionary Earnings (SDE) of ${formatCurrency(sde)}.`;
+
+  if (addbacks > 0) {
+    summary += ` Add-backs totaling ${formatCurrency(addbacks)} were identified as personal, discretionary, or non-recurring expenses.`;
+  } else {
+    summary += ` No significant add-backs were identified in the financial records.`;
+  }
+
+  return summary;
+}
+
+// ============================================================
+// GET /api/reports - List all reports
+// ============================================================
 router.get('/', authenticate, asyncHandler(async (req, res) => {
   const result = await query(
     `SELECT id, business_name, industry, status, payment_status, total_revenue, ebitda, sde,
@@ -132,6 +346,9 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   res.json({ reports: result.rows });
 }));
 
+// ============================================================
+// GET /api/reports/:id - Get specific report
+// ============================================================
 router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   const report = await getOwnedReport(req.params.id, req.user.id);
 
@@ -143,6 +360,9 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   res.json({ report, transactions: txns.rows, addbackSchedule: addbacks.rows });
 }));
 
+// ============================================================
+// PATCH /api/reports/:id/transactions/:txnId - Update transaction
+// ============================================================
 router.patch('/:id/transactions/:txnId', authenticate, asyncHandler(async (req, res) => {
   const report = await getOwnedReport(req.params.id, req.user.id);
   if (report.status === 'completed') {
@@ -171,6 +391,9 @@ router.patch('/:id/transactions/:txnId', authenticate, asyncHandler(async (req, 
   res.json({ transaction: result.rows[0], metrics });
 }));
 
+// ============================================================
+// POST /api/reports/:id/generate-pdf - Generate PDF
+// ============================================================
 router.post('/:id/generate-pdf', authenticate, asyncHandler(async (req, res) => {
   const report = await getOwnedReport(req.params.id, req.user.id);
 
@@ -217,6 +440,9 @@ router.post('/:id/generate-pdf', authenticate, asyncHandler(async (req, res) => 
   res.json({ message: 'Report generated', downloadUrl: `/api/reports/${report.id}/download` });
 }));
 
+// ============================================================
+// GET /api/reports/:id/download - Download PDF
+// ============================================================
 router.get('/:id/download', authenticate, asyncHandler(async (req, res) => {
   const report = await getOwnedReport(req.params.id, req.user.id);
   if (report.status !== 'completed' || !report.report_pdf_path) {
@@ -224,6 +450,10 @@ router.get('/:id/download', authenticate, asyncHandler(async (req, res) => {
   }
   res.download(report.report_pdf_path, `QOE-Report-${report.business_name}.pdf`);
 }));
+
+// ============================================================
+// Helper Functions
+// ============================================================
 
 async function getOwnedReport(reportId, userId) {
   const result = await query('SELECT * FROM reports WHERE id = $1 AND user_id = $2', [reportId, userId]);
