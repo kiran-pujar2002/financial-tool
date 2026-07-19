@@ -5,7 +5,7 @@ const fs = require('fs');
 const { query } = require('../config/db');
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler, HttpError } = require('../middleware/errorHandler');
-const { generateCIM } = require('../services/cimGenerator');
+const { generatePDF } = require('../services/pdf');
 
 const router = express.Router();
 
@@ -60,18 +60,25 @@ router.post('/generate', authenticate, asyncHandler(async (req, res) => {
         totalAddbacks: Number(report.total_addbacks) || 0,
     };
     
-    // Generate CIM
-    const outputPath = await generateCIM({
-        report,
-        transactions: txnsResult.rows,
-        addbacks: addbacksResult.rows,
-        metrics,
-        branding,
-        user: req.user
-    });
+    const outputDir = path.join(__dirname, '../reports/cims');
+    fs.mkdirSync(outputDir, { recursive: true });
+    const filename = `CIM-${report.business_name.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+    const outputPath = path.join(outputDir, filename);
     
-    // ✅ Get just the filename from the path
-    const filename = path.basename(outputPath);
+    // ✅ Use unified PDF generator
+    await generatePDF({
+        type: 'cim',
+        report: report,
+        data: {
+            metrics,
+            addbackSchedule: addbacksResult.rows,
+            coverInfo: {
+                subtitle: 'Confidential Information Memorandum',
+            },
+        },
+        branding,
+        outputPath,
+    });
     
     res.json({
         success: true,
@@ -86,20 +93,17 @@ router.post('/generate', authenticate, asyncHandler(async (req, res) => {
 router.get('/download/:filename', authenticate, asyncHandler(async (req, res) => {
     const { filename } = req.params;
     
-    // ✅ Security: Prevent path traversal
     const safeFilename = path.basename(filename);
     const filePath = path.join(__dirname, '../reports/cims', safeFilename);
     
-    console.log('📄 Looking for file:', filePath);
+    console.log('📄 Looking for CIM file:', filePath);
     
-    // Check if file exists
     if (!fs.existsSync(filePath)) {
-        console.error('❌ File not found:', filePath);
+        console.error('❌ CIM file not found:', filePath);
         throw new HttpError(404, 'File not found');
     }
     
-    // ✅ Send file for download
-    res.download(filePath, `CIM-${filename}`, (err) => {
+    res.download(filePath, `CIM-${safeFilename}`, (err) => {
         if (err) {
             console.error('❌ Download error:', err);
             res.status(500).json({ error: 'Download failed' });

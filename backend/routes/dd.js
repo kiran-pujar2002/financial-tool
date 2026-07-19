@@ -6,6 +6,7 @@ const fs = require('fs');
 const { query } = require('../config/db');
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler, HttpError } = require('../middleware/errorHandler');
+const { generatePDF } = require('../services/pdf');
 
 const router = express.Router();
 
@@ -26,6 +27,32 @@ const upload = multer({
     storage: documentStorage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
+
+// ============================================================
+// Helper: Get or create progress
+// ============================================================
+async function getOrCreateProgress(reportId, itemId) {
+    let result = await query(
+        'SELECT * FROM dd_progress WHERE report_id = $1 AND item_id = $2',
+        [reportId, itemId]
+    );
+    
+    if (result.rows.length > 0) {
+        console.log('✅ Progress already exists:', result.rows[0].id);
+        return result.rows[0];
+    }
+    
+    console.log('📝 Creating new progress record...');
+    result = await query(
+        `INSERT INTO dd_progress (report_id, item_id, status)
+         VALUES ($1, $2, 'pending')
+         RETURNING *`,
+        [reportId, itemId]
+    );
+    
+    console.log('✅ Progress created:', result.rows[0].id);
+    return result.rows[0];
+}
 
 // ============================================================
 // GET /api/dd/templates - Get all DD templates
@@ -51,7 +78,6 @@ router.get('/templates', authenticate, asyncHandler(async (req, res) => {
 router.get('/progress/:reportId', authenticate, asyncHandler(async (req, res) => {
     const { reportId } = req.params;
     
-    // Verify report ownership
     const reportResult = await query(
         'SELECT id FROM reports WHERE id = $1 AND user_id = $2',
         [reportId, req.user.id]
@@ -60,11 +86,11 @@ router.get('/progress/:reportId', authenticate, asyncHandler(async (req, res) =>
         throw new HttpError(404, 'Report not found');
     }
     
-    // Get all items with progress
     const result = await query(
         `SELECT 
             i.id, i.category, i.title, i.description, i.priority as default_priority,
             COALESCE(p.status, 'pending') as status,
+            p.id as progress_id,
             p.notes, p.assigned_to, p.due_date, p.completed_at,
             p.priority as custom_priority
         FROM dd_items i
@@ -73,7 +99,6 @@ router.get('/progress/:reportId', authenticate, asyncHandler(async (req, res) =>
         [reportId]
     );
     
-    // Calculate stats
     const total = result.rows.length;
     const completed = result.rows.filter(r => r.status === 'completed').length;
     const inProgress = result.rows.filter(r => r.status === 'in_progress').length;
@@ -100,7 +125,6 @@ router.put('/progress/:reportId/:itemId', authenticate, asyncHandler(async (req,
     const { reportId, itemId } = req.params;
     const { status, notes, priority, assignedTo, dueDate } = req.body;
     
-    // Verify report ownership
     const reportResult = await query(
         'SELECT id FROM reports WHERE id = $1 AND user_id = $2',
         [reportId, req.user.id]
@@ -109,63 +133,49 @@ router.put('/progress/:reportId/:itemId', authenticate, asyncHandler(async (req,
         throw new HttpError(404, 'Report not found');
     }
     
-    // Check if progress exists
-    const existing = await query(
-        'SELECT * FROM dd_progress WHERE report_id = $1 AND item_id = $2',
-        [reportId, itemId]
-    );
+    const progress = await getOrCreateProgress(reportId, itemId);
     
-    let result;
-    if (existing.rows.length === 0) {
-        // Create new progress
-        result = await query(
-            `INSERT INTO dd_progress (report_id, item_id, status, notes, priority, assigned_to, due_date)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
-             RETURNING *`,
-            [reportId, itemId, status || 'pending', notes, priority, assignedTo, dueDate]
-        );
-    } else {
-        // Update existing progress
-        const completedAt = status === 'completed' ? new Date() : null;
-        result = await query(
-            `UPDATE dd_progress 
-             SET status = $1, notes = $2, priority = $3, assigned_to = $4, 
-                 due_date = $5, completed_at = $6, updated_at = now()
-             WHERE report_id = $7 AND item_id = $8
-             RETURNING *`,
-            [status, notes, priority, assignedTo, dueDate, completedAt, reportId, itemId]
-        );
-    }
+    const completedAt = status === 'completed' ? new Date() : null;
+    
+    const result = await query(
+        `UPDATE dd_progress 
+         SET status = $1, notes = $2, priority = $3, assigned_to = $4, 
+             due_date = $5, completed_at = $6, updated_at = now()
+         WHERE id = $7
+         RETURNING *`,
+        [status, notes, priority, assignedTo, dueDate, completedAt, progress.id]
+    );
     
     res.json({ progress: result.rows[0] });
 }));
 
 // ============================================================
-// POST /api/dd/documents/:progressId - Upload document
+// POST /api/dd/documents/:itemId - Upload document
 // ============================================================
-router.post('/documents/:progressId', authenticate, upload.single('file'), asyncHandler(async (req, res) => {
-    const { progressId } = req.params;
+router.post('/documents/:itemId', authenticate, upload.single('file'), asyncHandler(async (req, res) => {
+    const { itemId } = req.params;
+    const { reportId } = req.query;
+    
+    console.log('📤 Uploading document for item:', itemId);
+    console.log('📤 Report ID:', reportId);
     
     if (!req.file) {
         throw new HttpError(400, 'No file uploaded');
     }
     
-    // Verify progress belongs to user's report
-    const progressResult = await query(
-        `SELECT p.*, r.user_id 
-         FROM dd_progress p
-         JOIN reports r ON p.report_id = r.id
-         WHERE p.id = $1`,
-        [progressId]
+    if (!reportId) {
+        throw new HttpError(400, 'reportId is required');
+    }
+    
+    const reportResult = await query(
+        'SELECT id FROM reports WHERE id = $1 AND user_id = $2',
+        [reportId, req.user.id]
     );
-    
-    if (progressResult.rows.length === 0) {
-        throw new HttpError(404, 'Progress not found');
+    if (reportResult.rows.length === 0) {
+        throw new HttpError(404, 'Report not found');
     }
     
-    if (progressResult.rows[0].user_id !== req.user.id) {
-        throw new HttpError(403, 'Unauthorized');
-    }
+    const progress = await getOrCreateProgress(reportId, itemId);
     
     const filePath = `/uploads/dd_documents/${req.file.filename}`;
     
@@ -173,7 +183,7 @@ router.post('/documents/:progressId', authenticate, upload.single('file'), async
         `INSERT INTO dd_documents (progress_id, filename, file_path, file_size, mime_type, uploaded_by)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [progressId, req.file.originalname, filePath, req.file.size, req.file.mimetype, req.user.id]
+        [progress.id, req.file.originalname, filePath, req.file.size, req.file.mimetype, req.user.id]
     );
     
     res.json({ document: result.rows[0] });
@@ -195,6 +205,108 @@ router.get('/documents/:progressId', authenticate, asyncHandler(async (req, res)
     );
     
     res.json({ documents: result.rows });
+}));
+
+// ============================================================
+// POST /api/dd/generate-report - Generate Due Diligence Report PDF
+// ============================================================
+router.post('/generate-report', authenticate, asyncHandler(async (req, res) => {
+    const { reportId } = req.body;
+    
+    if (!reportId) {
+        throw new HttpError(400, 'reportId is required');
+    }
+    
+    const reportResult = await query(
+        'SELECT * FROM reports WHERE id = $1 AND user_id = $2',
+        [reportId, req.user.id]
+    );
+    
+    if (reportResult.rows.length === 0) {
+        throw new HttpError(404, 'Report not found');
+    }
+    
+    const report = reportResult.rows[0];
+    
+    const progressResult = await query(
+        `SELECT 
+            i.id, i.category, i.title, i.description, i.priority as default_priority,
+            COALESCE(p.status, 'pending') as status,
+            p.notes, p.assigned_to, p.due_date, p.completed_at,
+            p.priority as custom_priority
+        FROM dd_items i
+        LEFT JOIN dd_progress p ON i.id = p.item_id AND p.report_id = $1
+        ORDER BY i.category, i.order_index`,
+        [reportId]
+    );
+    
+    const items = progressResult.rows;
+    const total = items.length;
+    const completed = items.filter(r => r.status === 'completed').length;
+    const inProgress = items.filter(r => r.status === 'in_progress').length;
+    const blocked = items.filter(r => r.status === 'blocked').length;
+    const pending = items.filter(r => r.status === 'pending').length;
+    
+    const stats = {
+        total,
+        completed,
+        inProgress,
+        blocked,
+        pending,
+        progressPercentage: total > 0 ? Math.round((completed / total) * 100) : 0
+    };
+    
+    const brandingResult = await query(
+        'SELECT * FROM broker_branding WHERE user_id = $1',
+        [req.user.id]
+    );
+    const branding = brandingResult.rows[0] || null;
+    
+    const outputDir = path.join(__dirname, '../reports/dd');
+    fs.mkdirSync(outputDir, { recursive: true });
+    const filename = `dd-${report.id}-${Date.now()}.pdf`;
+    const outputPath = path.join(outputDir, filename);
+    
+    // ✅ Use unified PDF generator
+    await generatePDF({
+        type: 'dd',
+        report: report,
+        data: {
+            items,
+            stats,
+            coverInfo: {
+                subtitle: 'Due Diligence Checklist',
+            },
+        },
+        branding,
+        outputPath,
+    });
+    
+    res.json({ 
+        success: true, 
+        downloadUrl: `/api/dd/download/${filename}`
+    });
+}));
+
+// ============================================================
+// GET /api/dd/download/:filename - Download Due Diligence Report
+// ============================================================
+router.get('/download/:filename', authenticate, asyncHandler(async (req, res) => {
+    const { filename } = req.params;
+    
+    const safeFilename = path.basename(filename);
+    const filePath = path.join(__dirname, '../reports/dd', safeFilename);
+    
+    if (!fs.existsSync(filePath)) {
+        throw new HttpError(404, 'File not found');
+    }
+    
+    res.download(filePath, `Due-Diligence-${safeFilename}`, (err) => {
+        if (err) {
+            console.error('❌ Download error:', err);
+            res.status(500).json({ error: 'Download failed' });
+        }
+    });
 }));
 
 module.exports = router;

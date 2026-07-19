@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
+import { downloadFile, getFilename } from '@/lib/download';
 import {
     ArrowLeft,
     TrendingUp,
@@ -29,9 +30,11 @@ export default function ValuationPage() {
     const [transactions, setTransactions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCalculating, setIsCalculating] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     const [valuation, setValuation] = useState(null);
     const [valuationHistory, setValuationHistory] = useState([]);
     const [industryMultiples, setIndustryMultiples] = useState([]);
+    const [actionPending, setActionPending] = useState(false);
     
     // Form state
     const [method, setMethod] = useState('sde');
@@ -53,16 +56,13 @@ export default function ValuationPage() {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            // Get report
             const reportData = await api.getReport(reportId);
             setReport(reportData.report);
             setTransactions(reportData.transactions);
             
-            // ✅ Get industry multiples using new API structure
             const multiplesData = await api.valuation.getMultiples();
             setIndustryMultiples(multiplesData.multiples);
             
-            // ✅ Get valuation history using new API structure
             const historyData = await api.valuation.getHistory(reportId);
             setValuationHistory(historyData.history || []);
             
@@ -73,12 +73,10 @@ export default function ValuationPage() {
         }
     };
 
-    // Handle valuation calculation
     const handleCalculate = async () => {
         setIsCalculating(true);
         try {
             const multiple = useCustomMultiple ? customMultiple : null;
-            // ✅ Calculate valuation using new API structure
             const result = await api.valuation.calculate({
                 reportId,
                 method,
@@ -95,6 +93,37 @@ export default function ValuationPage() {
         }
     };
 
+    // ✅ Download function - Same pattern as CIM
+    const downloadFileFn = async (url) => {
+        try {
+            const token = localStorage.getItem('token');
+            const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`;
+            
+            const response = await fetch(fullUrl, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Download failed');
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `Valuation-Report-${report?.business_name || 'Business'}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+            console.error('Download error:', error);
+            throw new Error('Failed to download file');
+        }
+    };
+
     // ✅ Handle download
     const handleDownload = async () => {
         if (!valuation) {
@@ -102,26 +131,44 @@ export default function ValuationPage() {
             return;
         }
         
+        setIsDownloading(true);
         try {
-            toast.loading('Generating valuation report...');
-            // ✅ Generate report using new API structure
             const response = await api.valuation.generateReport({
                 reportId: reportId,
                 valuationId: valuation.id
             });
             
-            // Download the file
-            window.open(response.downloadUrl, '_blank');
-            toast.dismiss();
-            toast.success('📊 Valuation report downloaded successfully!');
+            if (response.success && response.downloadUrl) {
+                await downloadFileFn(response.downloadUrl);
+                toast.success('📊 Valuation report downloaded successfully!');
+            } else {
+                toast.error('Failed to generate valuation report');
+            }
         } catch (err) {
-            toast.dismiss();
             toast.error('Failed to generate valuation report');
             console.error(err);
+        } finally {
+            setIsDownloading(false);
         }
     };
 
-    // Format currency
+    // ✅ Regenerate PDF
+    const handleRegenerate = async () => {
+        setActionPending(true);
+        try {
+            // Reset report status
+            await api.resetReportStatus(reportId);
+            // Generate fresh PDF
+            await api.generatePdf(reportId);
+            await loadData();
+            toast.success('PDF regenerated successfully!');
+        } catch (err) {
+            toast.error(err instanceof ApiError ? err.message : 'Failed to regenerate');
+        } finally {
+            setActionPending(false);
+        }
+    };
+
     const formatCurrency = (value) => {
         if (!value) return '—';
         return Number(value).toLocaleString('en-IN', {
@@ -158,6 +205,8 @@ export default function ValuationPage() {
             </div>
         );
     }
+
+    const isCompleted = report.status === 'completed';
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 py-8">
@@ -233,7 +282,6 @@ export default function ValuationPage() {
                                 ))}
                             </div>
 
-                            {/* Multiple Selection */}
                             <div className="mt-4">
                                 <label className="flex items-center gap-2 text-sm text-slate-700">
                                     <input
@@ -260,7 +308,6 @@ export default function ValuationPage() {
                                 )}
                             </div>
 
-                            {/* Industry Multiple Suggestion */}
                             {industryMultiples.length > 0 && report.industry && (
                                 <div className="mt-4 p-3 bg-slate-50 rounded-xl">
                                     <p className="text-xs text-slate-500">Industry Suggestion</p>
@@ -311,7 +358,6 @@ export default function ValuationPage() {
                             </div>
                         </div>
 
-                        {/* Calculate Button */}
                         <button
                             onClick={handleCalculate}
                             disabled={isCalculating}
@@ -375,21 +421,50 @@ export default function ValuationPage() {
 
                                     <button
                                         onClick={handleDownload}
-                                        disabled={!valuation}
+                                        disabled={!valuation || isDownloading}
                                         className="w-full py-2 border border-indigo-200 text-indigo-600 rounded-xl text-sm font-medium hover:bg-indigo-50 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <Download size={16} />
-                                        Download Report
+                                        {isDownloading ? (
+                                            <>
+                                                <RefreshCw size={16} className="animate-spin" />
+                                                Downloading...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Download size={16} />
+                                                Download Report
+                                            </>
+                                        )}
                                     </button>
+
+                                    {isCompleted && (
+                                        <button
+                                            onClick={handleRegenerate}
+                                            disabled={actionPending}
+                                            className="w-full py-2 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                                        >
+                                            {actionPending ? (
+                                                <>
+                                                    <RefreshCw size={16} className="animate-spin" />
+                                                    Regenerating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <RefreshCw size={16} />
+                                                    Regenerate PDF
+                                                </>
+                                            )}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ) : (
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 text-center">
                                 <BarChart3 size={48} className="text-slate-300 mx-auto mb-3" />
                                 <h3 className="font-semibold text-slate-900">No Valuation Yet</h3>
-<p className="text-sm text-slate-500 mt-1">
-  Configure the valuation settings and click calculate.
-</p>
+                                <p className="text-sm text-slate-500 mt-1">
+                                    Configure the valuation settings and click calculate.
+                                </p>
                             </div>
                         )}
                     </div>

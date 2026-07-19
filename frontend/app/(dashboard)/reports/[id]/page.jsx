@@ -3,14 +3,16 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import Link from 'next/link'
+import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import ShareModal from '@/components/ShareModal';
-import { 
-  Download, 
-  CreditCard, 
-  FileText, 
-  TrendingUp, 
+import { downloadFile, getFilename } from '@/lib/download';
+import toast from 'react-hot-toast';
+import {
+  Download,
+  CreditCard,
+  FileText,
+  TrendingUp,
   TrendingDown,
   AlertCircle,
   CheckCircle,
@@ -23,9 +25,11 @@ import {
   DollarSign,
   Edit2,
   BarChart3,
-  ClipboardCheck ,
-  Share2 
-    
+  ClipboardCheck,
+  Share2,
+  Trash2,
+  Menu,
+  X
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -53,7 +57,9 @@ export default function ReportDetailPage() {
   const [addbacks, setAddbacks] = useState([]);
   const [error, setError] = useState(null);
   const [actionPending, setActionPending] = useState(false);
-  const [showShareModal,setShowShareModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -75,7 +81,6 @@ export default function ReportDetailPage() {
     load();
   }, [user, load]);
 
-  // Poll while the AI pipeline is still running
   useEffect(() => {
     if (!report || !PROCESSING_STATUSES.includes(report.status)) return;
     const interval = setInterval(load, 3000);
@@ -107,6 +112,27 @@ export default function ReportDetailPage() {
       setActionPending(false);
     }
   }
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to move this report to trash? You can restore it later from the trash page.')) {
+      return;
+    }
+    
+    setActionPending(true);
+    try {
+      const response = await api.deleteReport(reportId);
+      if (response.alreadyDeleted) {
+        toast.info('This report is already in trash');
+      } else {
+        toast.success('Report moved to trash');
+      }
+      router.push('/dashboard');
+    } catch (err) {
+      toast.error('Failed to delete report');
+    } finally {
+      setActionPending(false);
+    }
+  };
 
   function loadRazorpayScript() {
     return new Promise((resolve, reject) => {
@@ -182,25 +208,30 @@ export default function ReportDetailPage() {
     }
   }
 
-  async function handleDownload() {
-    setActionPending(true);
-    setError(null);
+  const handleDownload = async (type, url, businessName) => {
+    if (isDownloading) return;
+
+    setIsDownloading(true);
+    const toastId = toast.loading('Downloading...');
+
     try {
-      const blob = await api.downloadReport(reportId);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `QOE-Report-${report.business_name}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const filename = getFilename(type, businessName);
+      await downloadFile(url, filename);
+      toast.dismiss(toastId);
+      toast.success('Download complete!');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Download failed — please try again.');
+      toast.dismiss(toastId);
+      toast.error(err.message || 'Download failed');
+      console.error('Download error:', err);
     } finally {
-      setActionPending(false);
+      setIsDownloading(false);
     }
-  }
+  };
+
+  // ✅ Mobile menu toggle
+  const toggleMobileMenu = () => {
+    setShowMobileMenu(!showMobileMenu);
+  };
 
   if (authLoading || !user || !report) {
     return (
@@ -217,25 +248,46 @@ export default function ReportDetailPage() {
   const isPaid = report.payment_status === 'paid';
   const isCompleted = report.status === 'completed';
 
+  // ✅ Header buttons data
+  const headerButtons = [
+    { href: `/reports/${report.id}/valuation`, label: 'Valuation', icon: BarChart3, color: 'emerald' },
+    { href: `/reports/${report.id}/edit`, label: 'Edit', icon: Edit2, color: 'indigo' },
+    { href: `/reports/${report.id}/due-diligence`, label: 'DD', icon: ClipboardCheck, color: 'purple' },
+    { 
+      onClick: () => setShowShareModal(true), 
+      label: 'Share', 
+      icon: Share2, 
+      color: 'blue' 
+    },
+    { 
+      onClick: handleDelete, 
+      label: 'Delete', 
+      icon: Trash2, 
+      color: 'red',
+      disabled: actionPending
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          {/* Top Row - Logo & Mobile Menu */}
+          <div className="flex items-center justify-between">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg flex-shrink-0">
                 <FileText className="text-white" size={20} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">{report.business_name}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{report.business_name}</h1>
                 <div className="flex flex-wrap items-center gap-2 mt-1">
                   <span className="text-sm text-slate-500 flex items-center gap-1">
                     <Building2 size={14} />
                     {report.industry || 'Industry not specified'}
                   </span>
-                  <span className="text-xs text-slate-300">•</span>
-                  <span className="text-sm text-slate-500 flex items-center gap-1">
+                  <span className="text-xs text-slate-300 hidden sm:inline">•</span>
+                  <span className="text-sm text-slate-500 flex items-center gap-1 hidden sm:flex">
                     <Calendar size={14} />
                     {new Date(report.created_at).toLocaleDateString()}
                   </span>
@@ -251,39 +303,87 @@ export default function ReportDetailPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/reports/${report.id}/valuation`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-sm font-medium hover:bg-emerald-100 transition"
-              >
-                <BarChart3 size={16} />
-                Valuation
-              </Link>
-              <Link
-                href={`/reports/${report.id}/edit`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-medium hover:bg-indigo-100 transition"
-              >
-                <Edit2 size={16} />
-                Edit Report
-              </Link>
-              <Link
-    href={`/reports/${report.id}/due-diligence`}
-    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-xl text-sm font-medium hover:bg-purple-100 transition"
->
-    <ClipboardCheck size={16} />
-    Due Diligence
-</Link>
-<button
-    onClick={() => setShowShareModal(true)}
-    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 transition"
->
-    <Share2 size={16} />
-    Share
-</button>
-              <div className="text-sm text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                <span className="font-medium">Report ID:</span> #{reportId.slice(0, 8)}
-              </div>
-            </div>
+
+            {/* ✅ Mobile Menu Toggle - Shows on small screens */}
+            <button
+              onClick={toggleMobileMenu}
+              className="lg:hidden p-2 hover:bg-slate-100 rounded-xl transition"
+              aria-label="Toggle menu"
+            >
+              {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+
+          {/* ✅ Desktop Buttons - Hidden on mobile */}
+          <div className="hidden lg:flex items-center gap-2 mt-4 pt-4 border-t border-slate-200">
+            {headerButtons.map((btn, index) => {
+              const Icon = btn.icon;
+              const colorClasses = {
+                emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100',
+                indigo: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100',
+                purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
+                blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
+                red: 'bg-red-50 text-red-600 hover:bg-red-100',
+              };
+              return (
+                <div key={index}>
+                  {btn.href ? (
+                    <Link
+                      href={btn.href}
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${colorClasses[btn.color]}`}
+                    >
+                      <Icon size={16} />
+                      {btn.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={btn.onClick}
+                      disabled={btn.disabled}
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${colorClasses[btn.color]}`}
+                    >
+                      <Icon size={16} />
+                      {btn.label}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ✅ Mobile Buttons - Wraps on small screens */}
+          <div className="flex lg:hidden flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-200">
+            {headerButtons.map((btn, index) => {
+              const Icon = btn.icon;
+              const colorClasses = {
+                emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100',
+                indigo: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100',
+                purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
+                blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
+                red: 'bg-red-50 text-red-600 hover:bg-red-100',
+              };
+              return (
+                <div key={index}>
+                  {btn.href ? (
+                    <Link
+                      href={btn.href}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${colorClasses[btn.color]}`}
+                    >
+                      <Icon size={14} />
+                      {btn.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={btn.onClick}
+                      disabled={btn.disabled}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${colorClasses[btn.color]}`}
+                    >
+                      <Icon size={14} />
+                      {btn.label}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -296,6 +396,8 @@ export default function ReportDetailPage() {
           </div>
         )}
 
+        {/* Rest of the component remains the same */}
+        {/* ... (Metrics, AI Summary, Add-back Schedule, Transactions, Action Card) ... */}
         {isProcessing && (
           <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-2xl p-8 text-center mb-6">
             <div className="flex flex-col items-center gap-3">
@@ -314,63 +416,61 @@ export default function ReportDetailPage() {
           </div>
         )}
 
-{/* // In the report detail page, update the failed status display */}
-
-{report.status === 'failed' && (
-    <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
-        <div className="flex items-start gap-3">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-            <div>
+        {report.status === 'failed' && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+              <div>
                 <h3 className="font-semibold text-red-700">Processing Failed</h3>
                 <p className="text-sm text-red-600 mt-1">
-                    {report.error_message?.includes('AI token quota exhausted') ? (
-                        <>
-                            {report.error_message}
-                            <div className="mt-3 space-y-2">
-                                <p className="text-sm font-medium">How to fix:</p>
-                                <ol className="text-sm list-decimal list-inside space-y-1 text-red-600">
-                                    <li>Go to <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google AI Studio</a></li>
-                                    <li>Enable billing for your project</li>
-                                    <li>Wait 1-2 minutes for the quota to refresh</li>
-                                    <li>Upload the report again</li>
-                                </ol>
-                            </div>
-                        </>
-                    ) : (
-                        report.error_message || 'Try uploading the file again, or contact support if this persists.'
-                    )}
+                  {report.error_message?.includes('AI token quota exhausted') ? (
+                    <>
+                      {report.error_message}
+                      <div className="mt-3 space-y-2">
+                        <p className="text-sm font-medium">How to fix:</p>
+                        <ol className="text-sm list-decimal list-inside space-y-1 text-red-600">
+                          <li>Go to <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google AI Studio</a></li>
+                          <li>Enable billing for your project</li>
+                          <li>Wait 1-2 minutes for the quota to refresh</li>
+                          <li>Upload the report again</li>
+                        </ol>
+                      </div>
+                    </>
+                  ) : (
+                    report.error_message || 'Try uploading the file again, or contact support if this persists.'
+                  )}
                 </p>
+              </div>
             </div>
-        </div>
-    </div>
-)}
+          </div>
+        )}
 
         {!isProcessing && report.status !== 'failed' && (
           <>
             {/* Metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-              <MetricCard 
-                label="Revenue" 
-                value={money(report.total_revenue)} 
+              <MetricCard
+                label="Revenue"
+                value={money(report.total_revenue)}
                 icon={<TrendingUp size={16} className="text-emerald-600" />}
                 color="emerald"
               />
-              <MetricCard 
-                label="Net Income" 
-                value={money(report.net_income)} 
+              <MetricCard
+                label="Net Income"
+                value={money(report.net_income)}
                 icon={<TrendingDown size={16} className="text-blue-600" />}
                 color="blue"
               />
-              <MetricCard 
-                label="EBITDA" 
-                value={money(report.ebitda)} 
+              <MetricCard
+                label="EBITDA"
+                value={money(report.ebitda)}
                 icon={<TrendingUp size={16} className="text-indigo-600" />}
                 color="indigo"
               />
-              <MetricCard 
-                label="SDE" 
-                value={money(report.sde)} 
-                highlight 
+              <MetricCard
+                label="SDE"
+                value={money(report.sde)}
+                highlight
                 icon={<DollarSign size={16} className="text-violet-600" />}
                 color="violet"
               />
@@ -483,10 +583,9 @@ export default function ReportDetailPage() {
               </div>
             </div>
 
-            {/* ========== ACTION CARD - FIXED (Only one section) ========== */}
+            {/* Action Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                {/* Left side - Status message */}
                 <div>
                   <h3 className="font-semibold text-slate-900">
                     {isCompleted ? '✅ Report is ready' : isPaid ? '💰 Payment received' : '💳 Ready to unlock'}
@@ -500,26 +599,15 @@ export default function ReportDetailPage() {
                   </p>
                 </div>
 
-                {/* Right side - Action Buttons */}
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Main Action Button */}
                   {isCompleted ? (
                     <button
-                      onClick={handleDownload}
-                      disabled={actionPending}
+                      onClick={() => handleDownload('qoe', `/api/reports/${report.id}/download`, report.business_name)}
+                      disabled={isDownloading}
                       className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-medium hover:shadow-lg transition-all duration-200 disabled:opacity-50"
                     >
-                      {actionPending ? (
-                        <>
-                          <RefreshCw size={18} className="animate-spin" />
-                          Downloading…
-                        </>
-                      ) : (
-                        <>
-                          <Download size={18} />
-                          Download PDF
-                        </>
-                      )}
+                      <Download size={18} />
+                      Download PDF
                     </button>
                   ) : isPaid ? (
                     <button
@@ -559,13 +647,7 @@ export default function ReportDetailPage() {
                       )}
                     </button>
                   )}
-                  <ShareModal
-    isOpen={showShareModal}
-    onClose={() => setShowShareModal(false)}
-    reportId={reportId}
-/>
 
-                  {/* CIM Report Button */}
                   <Link
                     href={`/reports/${report.id}/cim`}
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl text-sm font-medium hover:bg-emerald-100 transition border border-emerald-200"
@@ -579,6 +661,12 @@ export default function ReportDetailPage() {
           </>
         )}
       </main>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        reportId={reportId}
+      />
     </div>
   );
 }

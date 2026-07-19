@@ -44,6 +44,7 @@ export default function DueDiligencePage() {
     const [documents, setDocuments] = useState([]);
     const [showDocumentModal, setShowDocumentModal] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     const fileInputRef = useRef(null);
 
     // Filter states
@@ -63,11 +64,9 @@ export default function DueDiligencePage() {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            // Get report
             const reportData = await api.getReport(reportId);
             setReport(reportData.report);
 
-            // Get DD progress
             const progressData = await api.dd.getProgress(reportId);
             setItems(progressData.items || []);
             setStats(progressData.stats || {});
@@ -83,7 +82,6 @@ export default function DueDiligencePage() {
         setIsUpdating(true);
         try {
             await api.dd.updateProgress(reportId, itemId, { status });
-            // Reload data
             await loadData();
             toast.success('Status updated');
         } catch (err) {
@@ -106,7 +104,7 @@ export default function DueDiligencePage() {
         }
     };
 
-    const handleFileUpload = async (progressId, file) => {
+    const handleFileUpload = async (itemId, file) => {
         if (!file) return;
 
         setUploading(true);
@@ -114,14 +112,69 @@ export default function DueDiligencePage() {
             const formData = new FormData();
             formData.append('file', file);
 
-            await api.dd.uploadDocument(progressId, formData);
+            await api.dd.uploadDocument(itemId, reportId, formData);
             toast.success('Document uploaded successfully');
             await loadData();
             setShowDocumentModal(false);
         } catch (err) {
             toast.error('Failed to upload document');
+            console.error(err);
         } finally {
             setUploading(false);
+        }
+    };
+
+    // ✅ Download DD Report - Direct download with auth
+    const handleDownload = async () => {
+        console.log('Download button clicked');
+        if (isDownloading) return;
+
+        setIsDownloading(true);
+        const loadingToast = toast.loading('Generating due diligence report...');
+
+        try {
+            const response = await api.dd.generateReport({ reportId });
+            
+            toast.dismiss(loadingToast);
+
+            if (response.success && response.downloadUrl) {
+                // ✅ Direct download using fetch with auth
+                const token = localStorage.getItem('token');
+                const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${response.downloadUrl}`;
+                
+                const downloadResponse = await fetch(fullUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!downloadResponse.ok) {
+                    throw new Error(`Download failed with status: ${downloadResponse.status}`);
+                }
+
+                const blob = await downloadResponse.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `Due-Diligence-${report?.business_name || 'report'}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(downloadUrl);
+                }, 1000);
+                
+                toast.success('📊 Due Diligence report downloaded successfully!');
+            } else {
+                toast.error('Failed to generate due diligence report');
+            }
+        } catch (err) {
+            toast.dismiss(loadingToast);
+            toast.error(err.message || 'Failed to generate report');
+            console.error('Download error:', err);
+        } finally {
+            setIsDownloading(false);
         }
     };
 
@@ -167,7 +220,6 @@ export default function DueDiligencePage() {
         setExpandedCategories(newSet);
     };
 
-    // Group items by category
     const groupedItems = items.reduce((acc, item) => {
         if (!acc[item.category]) {
             acc[item.category] = [];
@@ -176,7 +228,6 @@ export default function DueDiligencePage() {
         return acc;
     }, {});
 
-    // Filter items
     const filteredItems = Object.keys(groupedItems).reduce((acc, category) => {
         const filtered = groupedItems[category].filter(item => {
             const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
@@ -205,18 +256,20 @@ export default function DueDiligencePage() {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 py-8">
             <div className="max-w-6xl mx-auto px-4 sm:px-6">
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-6">
-                    <button
-                        onClick={() => router.push(`/reports/${reportId}`)}
-                        className="p-2 hover:bg-slate-100 rounded-xl transition"
-                    >
-                        <ArrowLeft size={20} className="text-slate-600" />
-                    </button>
-                    <div className="flex-1">
-                        <h1 className="text-2xl font-bold text-slate-900">Due Diligence</h1>
-                        <p className="text-sm text-slate-500">
-                            {report?.business_name || 'Report'} · Track your due diligence progress
-                        </p>
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => router.push(`/reports/${reportId}`)}
+                            className="p-2 hover:bg-slate-100 rounded-xl transition"
+                        >
+                            <ArrowLeft size={20} className="text-slate-600" />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900">Due Diligence</h1>
+                            <p className="text-sm text-slate-500">
+                                {report?.business_name || 'Report'} · Track your due diligence progress
+                            </p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
@@ -224,6 +277,23 @@ export default function DueDiligencePage() {
                             className="p-2 hover:bg-slate-100 rounded-xl transition"
                         >
                             <RefreshCw size={18} className="text-slate-500" />
+                        </button>
+                        <button
+                            onClick={handleDownload}
+                            disabled={isDownloading}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 transition disabled:opacity-50"
+                        >
+                            {isDownloading ? (
+                                <>
+                                    <RefreshCw size={16} className="animate-spin" />
+                                    Generating...
+                                </>
+                            ) : (
+                                <>
+                                    <Download size={16} />
+                                    Download Report
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -296,7 +366,6 @@ export default function DueDiligencePage() {
                     ) : (
                         Object.keys(filteredItems).map((category) => (
                             <div key={category} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                {/* Category Header */}
                                 <button
                                     onClick={() => toggleCategory(category)}
                                     className="w-full flex items-center justify-between px-6 py-3 bg-slate-50 hover:bg-slate-100 transition"
@@ -320,13 +389,11 @@ export default function DueDiligencePage() {
                                     </div>
                                 </button>
 
-                                {/* Category Items */}
                                 {expandedCategories.has(category) && (
                                     <div className="divide-y divide-slate-100">
                                         {filteredItems[category].map((item) => (
                                             <div key={item.id} className="px-6 py-4 hover:bg-slate-50/50 transition">
                                                 <div className="flex items-start gap-4">
-                                                    {/* Status Button */}
                                                     <button
                                                         onClick={() => {
                                                             const nextStatus = {
@@ -343,7 +410,6 @@ export default function DueDiligencePage() {
                                                         {getStatusIcon(item.status)}
                                                     </button>
 
-                                                    {/* Content */}
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex flex-wrap items-start justify-between gap-2">
                                                             <div>
@@ -362,7 +428,6 @@ export default function DueDiligencePage() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Notes & Actions */}
                                                         <div className="mt-3 flex flex-wrap items-center gap-3">
                                                             <input
                                                                 type="text"
@@ -433,8 +498,6 @@ export default function DueDiligencePage() {
                                     onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                            // Need progressId from selected item - we'll get it from the progress
-                                            // For now, we'll use a simple approach
                                             handleFileUpload(selectedItem.id, file);
                                         }
                                     }}

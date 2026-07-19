@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 
 export default function CIMPage() {
     const { user, loading: authLoading } = useAuth();
+    const [isDownloading, setIsDownloading] = useState(false);
     const router = useRouter();
     const params = useParams();
     const reportId = params.id;
@@ -48,21 +49,19 @@ export default function CIMPage() {
     const handleGenerate = async () => {
         setIsGenerating(true);
         try {
-            // Generate the CIM
             const response = await api.cim.generate({ reportId });
             
             if (response.success && response.downloadUrl) {
-                // ✅ Download using fetch with auth token
-                await downloadFile(response.downloadUrl);
-                toast.success('CIM generated and downloaded successfully!');
-            } else {
-                toast.error('Failed to generate CIM');
+                setIsDownloading(true);
+                const filename = getFilename('cim', report.business_name);
+                await downloadFile(response.downloadUrl, filename);
+                toast.success('CIM downloaded successfully!');
             }
         } catch (err) {
             toast.error('Failed to generate CIM');
-            console.error(err);
         } finally {
             setIsGenerating(false);
+            setIsDownloading(false);
         }
     };
 

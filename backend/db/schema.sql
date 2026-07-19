@@ -426,3 +426,9 @@ CREATE TABLE IF NOT EXISTS share_analytics (
 );
 
 CREATE INDEX IF NOT EXISTS idx_share_analytics_share_link_id ON share_analytics(share_link_id);
+
+
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS deleted_by UUID REFERENCES users(id);
+
+CREATE INDEX IF NOT EXISTS idx_reports_deleted_at ON reports(deleted_at);

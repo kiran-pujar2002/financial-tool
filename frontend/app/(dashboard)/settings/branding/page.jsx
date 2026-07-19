@@ -67,7 +67,8 @@ export default function BrandingSettingsPage() {
     const loadBranding = async () => {
         setIsLoading(true);
         try {
-            const data = await api.get('/branding');
+            // ✅ FIX: Use api.branding.get() instead of api.get()
+            const data = await api.branding.get();
             if (data.branding) {
                 setBranding(data.branding);
                 setFormData({
@@ -85,6 +86,7 @@ export default function BrandingSettingsPage() {
                 });
             }
         } catch (err) {
+            console.error('Error loading branding:', err);
             toast.error('Failed to load branding settings');
         } finally {
             setIsLoading(false);
@@ -106,12 +108,12 @@ export default function BrandingSettingsPage() {
         formData.append('logo', file);
 
         try {
-            const result = await api.post('/branding/logo', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            // ✅ FIX: Use api.branding.uploadLogo()
+            const result = await api.branding.uploadLogo(formData);
             setFormData(prev => ({ ...prev, logo_url: result.logo_url }));
             toast.success('Logo uploaded successfully!');
         } catch (err) {
+            console.error('Error uploading logo:', err);
             toast.error('Failed to upload logo');
         } finally {
             setIsUploading(false);
@@ -121,10 +123,12 @@ export default function BrandingSettingsPage() {
     // Handle logo removal
     const handleRemoveLogo = async () => {
         try {
-            await api.delete('/branding/logo');
+            // ✅ FIX: Use api.branding.removeLogo()
+            await api.branding.removeLogo();
             setFormData(prev => ({ ...prev, logo_url: null }));
             toast.success('Logo removed');
         } catch (err) {
+            console.error('Error removing logo:', err);
             toast.error('Failed to remove logo');
         }
     };
@@ -133,9 +137,11 @@ export default function BrandingSettingsPage() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await api.put('/branding', formData);
+            // ✅ FIX: Use api.branding.update()
+            await api.branding.update(formData);
             toast.success('Branding settings saved!');
         } catch (err) {
+            console.error('Error saving branding:', err);
             toast.error('Failed to save settings');
         } finally {
             setIsSaving(false);
@@ -336,7 +342,7 @@ export default function BrandingSettingsPage() {
                                         Remove logo
                                     </button>
                                 )}
-<p className="text-xs text-slate-500 mt-2">PNG, JPG, or SVG • Max 5MB</p>
+                                <p className="text-xs text-slate-500 mt-2">PNG, JPG, or SVG • Max 5MB</p>
                             </div>
                         </div>
                     </div>

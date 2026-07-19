@@ -109,6 +109,54 @@ export const api = {
   verifyPayment: (data) =>
     request('/api/payments/verify', { method: 'POST', body: JSON.stringify(data) }),
 
+
+  // Add to the api object
+// Unified download endpoints
+downloads: {
+    // QOE Report
+    qoe: (reportId) => `/api/reports/${reportId}/download`,
+    
+    // Valuation
+    valuation: (filename) => `/api/valuation/download/${filename}`,
+    
+    // CIM
+    cim: (filename) => `/api/cim/download/${filename}`,
+    
+    // Due Diligence (coming soon)
+    dd: (reportId) => `/api/dd/${reportId}/download`,
+},
+
+// Helper to get download URL
+getDownloadUrl: (type, id) => {
+    const urls = {
+        qoe: `/api/reports/${id}/download`,
+        valuation: `/api/valuation/download/${id}`,
+        cim: `/api/cim/download/${id}`,
+        dd: `/api/dd/${id}/download`,
+    };
+    return urls[type] || null;
+},
+
+
+// Add to the api object
+
+// Delete report (soft delete)
+deleteReport: (id) =>
+    request(`/api/reports/${id}`, {
+        method: 'DELETE'
+    }),
+
+// Restore report
+restoreReport: (id) =>
+    request(`/api/reports/${id}/restore`, {
+        method: 'POST'
+    }),
+
+
+    
+// Get trashed reports
+getTrashedReports: () =>
+    request('/api/reports/trash'),
   // ============================================
   // VALUATION APIs
   // ============================================
@@ -238,7 +286,22 @@ export const api = {
       }),
     getDocuments: (progressId) => 
       request(`/api/dd/documents/${progressId}`),
+
+        uploadDocument: (itemId, reportId, formData) =>
+        request(`/api/dd/documents/${itemId}?reportId=${reportId}`, {
+            method: 'POST',
+            body: formData
+        }),
+
+            generateReport: (data) => 
+        request('/api/dd/generate-report', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+    
   },
+
+
 
   // ============================================
   // SHARE APIs

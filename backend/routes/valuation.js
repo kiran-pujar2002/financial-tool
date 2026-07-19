@@ -1,8 +1,11 @@
 // routes/valuation.js
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const { query } = require('../config/db');
 const { authenticate } = require('../middleware/auth');
 const { asyncHandler, HttpError } = require('../middleware/errorHandler');
+const { generatePDF } = require('../services/pdf');
 
 const router = express.Router();
 
@@ -27,7 +30,6 @@ router.get('/multiples/:industry', authenticate, asyncHandler(async (req, res) =
     );
     
     if (result.rows.length === 0) {
-        // Return default multiples
         return res.json({
             multiples: [{
                 industry: industry,
@@ -57,7 +59,6 @@ router.post('/calculate', authenticate, asyncHandler(async (req, res) => {
         throw new HttpError(400, 'reportId is required');
     }
     
-    // Get report data
     const reportResult = await query(
         'SELECT * FROM reports WHERE id = $1 AND user_id = $2',
         [reportId, req.user.id]
@@ -69,7 +70,6 @@ router.post('/calculate', authenticate, asyncHandler(async (req, res) => {
     
     const report = reportResult.rows[0];
     
-    // Get industry multiples
     let industryMultiples = null;
     if (report.industry) {
         const multiplesResult = await query(
@@ -81,10 +81,8 @@ router.post('/calculate', authenticate, asyncHandler(async (req, res) => {
         }
     }
     
-    // Calculate valuation based on method
     let valuation = calculateValuation(report, method, multiple, industryMultiples, riskFactors);
     
-    // Save valuation
     const result = await query(
         `INSERT INTO valuations (
             report_id, user_id, method, 
@@ -128,6 +126,105 @@ router.get('/history/:reportId', authenticate, asyncHandler(async (req, res) => 
 }));
 
 // ============================================================
+// POST /api/valuation/generate-report - Generate Valuation Report PDF
+// ============================================================
+router.post('/generate-report', authenticate, asyncHandler(async (req, res) => {
+    const { reportId, valuationId } = req.body;
+    
+    if (!reportId) {
+        throw new HttpError(400, 'reportId is required');
+    }
+    
+    const reportResult = await query(
+        'SELECT * FROM reports WHERE id = $1 AND user_id = $2',
+        [reportId, req.user.id]
+    );
+    
+    if (reportResult.rows.length === 0) {
+        throw new HttpError(404, 'Report not found');
+    }
+    
+    const report = reportResult.rows[0];
+    
+    let valuation;
+    if (valuationId) {
+        const valuationResult = await query(
+            'SELECT * FROM valuations WHERE id = $1 AND report_id = $2 AND user_id = $3',
+            [valuationId, reportId, req.user.id]
+        );
+        if (valuationResult.rows.length === 0) {
+            throw new HttpError(404, 'Valuation not found');
+        }
+        valuation = valuationResult.rows[0];
+    } else {
+        const valuationResult = await query(
+            'SELECT * FROM valuations WHERE report_id = $1 AND user_id = $2 ORDER BY created_at DESC LIMIT 1',
+            [reportId, req.user.id]
+        );
+        if (valuationResult.rows.length === 0) {
+            throw new HttpError(404, 'No valuation found for this report');
+        }
+        valuation = valuationResult.rows[0];
+    }
+    
+    const brandingResult = await query(
+        'SELECT * FROM broker_branding WHERE user_id = $1',
+        [req.user.id]
+    );
+    const branding = brandingResult.rows[0] || null;
+    
+    const outputDir = path.join(__dirname, '../reports/valuations');
+    fs.mkdirSync(outputDir, { recursive: true });
+    const filename = `valuation-${report.id}-${Date.now()}.pdf`;
+    const outputPath = path.join(outputDir, filename);
+    
+    // ✅ Use unified PDF generator
+    await generatePDF({
+        type: 'valuation',
+        report: report,
+        data: {
+            valuation: valuation,
+            metrics: {
+                totalRevenue: Number(report.total_revenue) || 0,
+                ebitda: Number(report.ebitda) || 0,
+                sde: Number(report.sde) || 0,
+            },
+            coverInfo: {
+                subtitle: 'Broker\'s Opinion of Value',
+            },
+        },
+        branding,
+        outputPath,
+    });
+    
+    res.json({ 
+        success: true, 
+        downloadUrl: `/api/valuation/download/${filename}`
+    });
+}));
+
+// ============================================================
+// GET /api/valuation/download/:filename - Download Valuation Report
+// ============================================================
+router.get('/download/:filename', authenticate, asyncHandler(async (req, res) => {
+    const { filename } = req.params;
+    
+    const safeFilename = path.basename(filename);
+    const filePath = path.join(__dirname, '../reports/valuations', safeFilename);
+    
+    if (!fs.existsSync(filePath)) {
+        throw new HttpError(404, 'File not found');
+    }
+    
+    res.download(filePath, `Valuation-Report-${safeFilename}`, (err) => {
+        if (err) {
+            console.error('❌ Download error:', err);
+            res.status(500).json({ error: 'Download failed' });
+        }
+    });
+}));
+
+// ============================================================
 // HELPER: Calculate Valuation
 // ============================================================
 function calculateValuation(report, method, multiple, industryMultiples, riskFactors) {
@@ -135,12 +232,10 @@ function calculateValuation(report, method, multiple, industryMultiples, riskFac
     let multipleUsed = multiple || 3.0;
     let adjustments = {};
     
-    // Get financial metrics
     const sde = Number(report.sde) || 0;
     const ebitda = Number(report.ebitda) || 0;
     const revenue = Number(report.total_revenue) || 0;
     
-    // Use industry multiple if available
     if (industryMultiples) {
         switch(method) {
             case 'sde':
@@ -155,7 +250,6 @@ function calculateValuation(report, method, multiple, industryMultiples, riskFac
         }
     }
     
-    // Calculate base value
     switch(method) {
         case 'sde':
             baseValue = sde * multipleUsed;
@@ -170,7 +264,6 @@ function calculateValuation(report, method, multiple, industryMultiples, riskFac
             baseValue = sde * 3.0;
     }
     
-    // Apply risk adjustments
     let adjustmentFactor = 1.0;
     const riskAdjustments = [];
     
@@ -185,9 +278,7 @@ function calculateValuation(report, method, multiple, industryMultiples, riskFac
     }
     
     const adjustedValue = baseValue * adjustmentFactor;
-    
-    // Calculate range
-    const range = 0.2; // 20% range
+    const range = 0.2;
     const min = adjustedValue * (1 - range);
     const max = adjustedValue * (1 + range);
     
@@ -204,87 +295,5 @@ function calculateValuation(report, method, multiple, industryMultiples, riskFac
         }
     };
 }
-
-// Add this at the end of valuation.js, before module.exports
-
-// ============================================================
-// POST /api/valuation/generate-report - Generate Valuation Report PDF
-// ============================================================
-router.post('/generate-report', authenticate, asyncHandler(async (req, res) => {
-    const { reportId, valuationId } = req.body;
-    
-    if (!reportId) {
-        throw new HttpError(400, 'reportId is required');
-    }
-    
-    // Get report data
-    const reportResult = await query(
-        'SELECT * FROM reports WHERE id = $1 AND user_id = $2',
-        [reportId, req.user.id]
-    );
-    
-    if (reportResult.rows.length === 0) {
-        throw new HttpError(404, 'Report not found');
-    }
-    
-    const report = reportResult.rows[0];
-    
-    // Get valuation data
-    let valuation;
-    if (valuationId) {
-        const valuationResult = await query(
-            'SELECT * FROM valuations WHERE id = $1 AND report_id = $2 AND user_id = $3',
-            [valuationId, reportId, req.user.id]
-        );
-        if (valuationResult.rows.length === 0) {
-            throw new HttpError(404, 'Valuation not found');
-        }
-        valuation = valuationResult.rows[0];
-    } else {
-        // Get latest valuation
-        const valuationResult = await query(
-            'SELECT * FROM valuations WHERE report_id = $1 AND user_id = $2 ORDER BY created_at DESC LIMIT 1',
-            [reportId, req.user.id]
-        );
-        if (valuationResult.rows.length === 0) {
-            throw new HttpError(404, 'No valuation found for this report');
-        }
-        valuation = valuationResult.rows[0];
-    }
-    
-    // Get branding
-    const brandingResult = await query(
-        'SELECT * FROM broker_branding WHERE user_id = $1',
-        [req.user.id]
-    );
-    const branding = brandingResult.rows[0] || null;
-    
-    // Generate valuation report PDF
-    const outputPath = await generateValuationReport({
-        report,
-        valuation,
-        branding,
-        user: req.user
-    });
-    
-    res.json({ 
-        success: true, 
-        downloadUrl: `/api/valuation/download/${path.basename(outputPath)}`
-    });
-}));
-
-// ============================================================
-// GET /api/valuation/download/:filename - Download Valuation Report
-// ============================================================
-router.get('/download/:filename', authenticate, asyncHandler(async (req, res) => {
-    const { filename } = req.params;
-    const filePath = path.join(__dirname, '../reports/valuations', filename);
-    
-    if (!fs.existsSync(filePath)) {
-        throw new HttpError(404, 'File not found');
-    }
-    
-    res.download(filePath, `Valuation-Report-${filename}`);
-}));
 
 module.exports = router;
