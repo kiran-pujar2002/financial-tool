@@ -432,3 +432,340 @@ ALTER TABLE reports ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 ALTER TABLE reports ADD COLUMN IF NOT EXISTS deleted_by UUID REFERENCES users(id);
 
 CREATE INDEX IF NOT EXISTS idx_reports_deleted_at ON reports(deleted_at);
+
+-- ============================================================
+-- AI DEAL ASSISTANT TABLES
+-- ============================================================
+
+-- 1. Chat Sessions
+CREATE TABLE IF NOT EXISTS chat_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) DEFAULT 'New Chat',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_report_id ON chat_sessions(report_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_id ON chat_sessions(user_id);
+
+-- 2. Chat Messages
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL, -- 'user' or 'assistant'
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
+
+-- 3. Report Context (for RAG)
+CREATE TABLE IF NOT EXISTS report_context (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    chunk_text TEXT NOT NULL,
+    chunk_type VARCHAR(50) NOT NULL, -- 'summary', 'transaction', 'addback', 'metric'
+    metadata JSONB,
+    embedding vector(1536), -- For pgvector or store as JSON
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_report_context_report_id ON report_context(report_id);
+
+-- ============================================================
+-- AI DEAL ASSISTANT TABLES (WITH VECTOR SUPPORT)
+-- ============================================================
+
+-- 1. Enable vector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 2. Report Context with Embeddings
+CREATE TABLE IF NOT EXISTS report_context (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    chunk_text TEXT NOT NULL,
+    chunk_type VARCHAR(50) NOT NULL,
+    metadata JSONB,
+    embedding vector(1536), -- 👈 1536 for OpenAI embeddings
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_report_context_report_id ON report_context(report_id);
+
+-- 3. Create an Index for Fast Similarity Search
+-- Recommended for performance: uses cosine distance
+CREATE INDEX ON report_context 
+    USING ivfflat (embedding vector_cosine_ops)
+    WITH (lists = 100);
+
+    -- ============================================================
+-- FINANCIAL MODELING TABLES
+-- ============================================================
+
+-- 1. Financial Models
+CREATE TABLE IF NOT EXISTS financial_models (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL DEFAULT 'My Projection',
+    description TEXT,
+    base_year INTEGER NOT NULL,
+    projection_years INTEGER DEFAULT 5,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_financial_models_report_id ON financial_models(report_id);
+CREATE INDEX IF NOT EXISTS idx_financial_models_user_id ON financial_models(user_id);
+
+-- 2. Model Scenarios
+CREATE TABLE IF NOT EXISTS model_scenarios (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    model_id UUID NOT NULL REFERENCES financial_models(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL, -- 'Base', 'Best', 'Worst', 'Custom'
+    description TEXT,
+    assumptions JSONB,
+    revenue_growth_rate NUMERIC(5,2),
+    ebitda_margin NUMERIC(5,2),
+    capex_percentage NUMERIC(5,2),
+    working_capital_percentage NUMERIC(5,2),
+    tax_rate NUMERIC(5,2) DEFAULT 25.0,
+    discount_rate NUMERIC(5,2) DEFAULT 12.0,
+    terminal_growth_rate NUMERIC(5,2) DEFAULT 3.0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_model_scenarios_model_id ON model_scenarios(model_id);
+
+-- 3. Model Projections
+CREATE TABLE IF NOT EXISTS model_projections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    scenario_id UUID NOT NULL REFERENCES model_scenarios(id) ON DELETE CASCADE,
+    year INTEGER NOT NULL,
+    revenue NUMERIC(16,2),
+    ebitda NUMERIC(16,2),
+    sde NUMERIC(16,2),
+    net_income NUMERIC(16,2),
+    free_cash_flow NUMERIC(16,2),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(scenario_id, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_model_projections_scenario_id ON model_projections(scenario_id);
+
+
+-- ============================================================
+-- AUTOMATED NARRATIVE GENERATION TABLES
+-- ============================================================
+
+-- 1. Narrative Templates
+CREATE TABLE IF NOT EXISTS narrative_templates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    section VARCHAR(50) NOT NULL, -- 'executive_summary', 'business_overview', 'financial_analysis', etc.
+    tone VARCHAR(30) DEFAULT 'professional', -- 'professional', 'concise', 'detailed', 'investor_friendly'
+    template_text TEXT NOT NULL, -- Template with {{placeholders}}
+    is_default BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_narrative_templates_user_id ON narrative_templates(user_id);
+CREATE INDEX IF NOT EXISTS idx_narrative_templates_section ON narrative_templates(section);
+
+-- 2. Generated Narratives
+CREATE TABLE IF NOT EXISTS generated_narratives (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    section VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    tone VARCHAR(30) DEFAULT 'professional',
+    version INTEGER DEFAULT 1,
+    is_published BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_generated_narratives_report_id ON generated_narratives(report_id);
+CREATE INDEX IF NOT EXISTS idx_generated_narratives_user_id ON generated_narratives(user_id);
+
+-- 3. Default Templates
+INSERT INTO narrative_templates (name, description, section, tone, template_text, is_default) VALUES
+('Professional Executive Summary', 'Standard professional tone for executive summaries', 'executive_summary', 'professional', 
+'{{business_name}} generated {{revenue}} in revenue for the period, with EBITDA of {{ebitda}} and Seller''s Discretionary Earnings (SDE) of {{sde}}. {{addbacks_summary}} The business operates in the {{industry}} industry and has demonstrated {{growth_summary}}.', true),
+
+('Concise Executive Summary', 'Short and punchy executive summary', 'executive_summary', 'concise',
+'{{business_name}}: Revenue {{revenue}}, EBITDA {{ebitda}}, SDE {{sde}}. {{addbacks_count}} add-backs identified.', true),
+
+('Detailed Business Overview', 'Comprehensive business overview for CIM', 'business_overview', 'detailed',
+'{{business_name}} is a {{industry}} business with a strong market position. The company has demonstrated consistent performance with revenue of {{revenue}} and EBITDA of {{ebitda}}. {{strengths_summary}}', true),
+
+('Investor-Friendly Overview', 'Overview tailored for potential investors', 'business_overview', 'investor_friendly',
+'{{business_name}} presents a compelling investment opportunity in the {{industry}} sector. With {{revenue}} in revenue and {{sde}} in SDE, the business offers {{growth_opportunity}}.', true);
+
+-- 4. Update trigger for updated_at
+DROP TRIGGER IF EXISTS trg_narrative_templates_updated_at ON narrative_templates;
+CREATE TRIGGER trg_narrative_templates_updated_at BEFORE UPDATE ON narrative_templates
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS trg_generated_narratives_updated_at ON generated_narratives;
+CREATE TRIGGER trg_generated_narratives_updated_at BEFORE UPDATE ON generated_narratives
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+    -- ============================================================
+-- COMPETITIVE INTELLIGENCE & BENCHMARKING TABLES
+-- ============================================================
+
+-- 1. Industry Benchmarks
+CREATE TABLE IF NOT EXISTS industry_benchmarks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    industry VARCHAR(255) NOT NULL UNIQUE,
+    sub_industry VARCHAR(255),
+    sde_multiple_min NUMERIC(5,2),
+    sde_multiple_mid NUMERIC(5,2),
+    sde_multiple_max NUMERIC(5,2),
+    ebitda_multiple_min NUMERIC(5,2),
+    ebitda_multiple_mid NUMERIC(5,2),
+    ebitda_multiple_max NUMERIC(5,2),
+    revenue_multiple_min NUMERIC(5,2),
+    revenue_multiple_mid NUMERIC(5,2),
+    revenue_multiple_max NUMERIC(5,2),
+    gross_margin_avg NUMERIC(5,2),
+    ebitda_margin_avg NUMERIC(5,2),
+    sde_margin_avg NUMERIC(5,2),
+    revenue_growth_avg NUMERIC(5,2),
+    source VARCHAR(500),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_industry_benchmarks_industry ON industry_benchmarks(industry);
+
+-- 2. Default Industry Benchmarks Data
+INSERT INTO industry_benchmarks (
+    industry, sde_multiple_min, sde_multiple_mid, sde_multiple_max,
+    ebitda_multiple_min, ebitda_multiple_mid, ebitda_multiple_max,
+    revenue_multiple_min, revenue_multiple_mid, revenue_multiple_max,
+    gross_margin_avg, ebitda_margin_avg, sde_margin_avg, revenue_growth_avg
+) VALUES
+('Retail / Hardware', 2.0, 3.0, 4.5, 3.0, 4.5, 6.0, 0.5, 1.0, 1.5, 35.0, 15.0, 20.0, 8.0),
+('Retail / General', 1.8, 2.8, 4.0, 2.5, 4.0, 5.5, 0.4, 0.8, 1.2, 30.0, 12.0, 18.0, 7.0),
+('Manufacturing', 2.5, 3.5, 5.0, 3.5, 5.0, 7.0, 0.8, 1.2, 2.0, 40.0, 18.0, 25.0, 10.0),
+('Technology', 3.0, 5.0, 8.0, 5.0, 7.0, 10.0, 2.0, 4.0, 6.0, 60.0, 25.0, 35.0, 15.0),
+('Healthcare', 2.5, 4.0, 6.0, 4.0, 5.5, 8.0, 1.5, 2.5, 4.0, 45.0, 20.0, 28.0, 12.0),
+('Services / Professional', 2.0, 3.0, 5.0, 3.0, 4.5, 7.0, 0.6, 1.0, 1.8, 50.0, 22.0, 30.0, 10.0),
+('Hospitality', 1.8, 2.5, 3.5, 2.5, 3.5, 5.0, 0.3, 0.6, 1.0, 25.0, 10.0, 15.0, 6.0),
+('Construction', 2.0, 3.0, 4.5, 3.0, 4.0, 6.0, 0.5, 0.8, 1.2, 28.0, 14.0, 20.0, 8.0),
+('Food & Beverage', 1.8, 2.8, 4.0, 2.5, 4.0, 5.5, 0.4, 0.8, 1.5, 35.0, 15.0, 22.0, 9.0),
+('E-commerce', 2.5, 4.0, 6.0, 4.0, 6.0, 8.0, 1.0, 2.0, 3.5, 45.0, 20.0, 30.0, 20.0)
+ON CONFLICT (industry) DO UPDATE SET
+    sde_multiple_min = EXCLUDED.sde_multiple_min,
+    sde_multiple_mid = EXCLUDED.sde_multiple_mid,
+    sde_multiple_max = EXCLUDED.sde_multiple_max,
+    ebitda_multiple_min = EXCLUDED.ebitda_multiple_min,
+    ebitda_multiple_mid = EXCLUDED.ebitda_multiple_mid,
+    ebitda_multiple_max = EXCLUDED.ebitda_multiple_max,
+    revenue_multiple_min = EXCLUDED.revenue_multiple_min,
+    revenue_multiple_mid = EXCLUDED.revenue_multiple_mid,
+    revenue_multiple_max = EXCLUDED.revenue_multiple_max,
+    gross_margin_avg = EXCLUDED.gross_margin_avg,
+    ebitda_margin_avg = EXCLUDED.ebitda_margin_avg,
+    sde_margin_avg = EXCLUDED.sde_margin_avg,
+    revenue_growth_avg = EXCLUDED.revenue_growth_avg,
+    updated_at = now();
+
+-- 3. Peer Comparison Cache
+CREATE TABLE IF NOT EXISTS peer_comparisons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    comparison_data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_peer_comparisons_report_id ON peer_comparisons(report_id);
+CREATE INDEX IF NOT EXISTS idx_peer_comparisons_user_id ON peer_comparisons(user_id);
+
+-- ============================================================
+-- MARKETPLACE & NETWORK TABLES
+-- ============================================================
+
+-- 1. Marketplace Listings
+CREATE TABLE IF NOT EXISTS marketplace_listings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    report_id UUID REFERENCES reports(id) ON DELETE SET NULL,
+    business_name VARCHAR(255) NOT NULL,
+    industry VARCHAR(100),
+    location VARCHAR(255),
+    revenue NUMERIC(16,2),
+    ebitda NUMERIC(16,2),
+    sde NUMERIC(16,2),
+    asking_price NUMERIC(16,2),
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'active', -- active, pending, sold, archived
+    is_featured BOOLEAN DEFAULT false,
+    views INTEGER DEFAULT 0,
+    interests INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_marketplace_listings_user_id ON marketplace_listings(user_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_listings_status ON marketplace_listings(status);
+CREATE INDEX IF NOT EXISTS idx_marketplace_listings_industry ON marketplace_listings(industry);
+
+-- 2. Deal Interests (Buyers expressing interest)
+CREATE TABLE IF NOT EXISTS marketplace_interests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    listing_id UUID NOT NULL REFERENCES marketplace_listings(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message TEXT,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, accepted, rejected, withdrawn
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(listing_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_marketplace_interests_listing_id ON marketplace_interests(listing_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_interests_user_id ON marketplace_interests(user_id);
+
+-- 3. Deal Rooms (Private spaces for negotiations)
+CREATE TABLE IF NOT EXISTS marketplace_deal_rooms (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    listing_id UUID NOT NULL REFERENCES marketplace_listings(id) ON DELETE CASCADE,
+    buyer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    broker_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    status VARCHAR(20) DEFAULT 'active', -- active, closed, archived
+    nda_signed BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_marketplace_deal_rooms_listing_id ON marketplace_deal_rooms(listing_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_deal_rooms_buyer_id ON marketplace_deal_rooms(buyer_id);
+
+-- 4. Deal Room Messages
+CREATE TABLE IF NOT EXISTS marketplace_deal_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    deal_room_id UUID NOT NULL REFERENCES marketplace_deal_rooms(id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_marketplace_deal_messages_deal_room_id ON marketplace_deal_messages(deal_room_id);
+
+-- 5. User Roles (Auto-assigned based on activity)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS roles TEXT[] DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_status VARCHAR(20) DEFAULT 'unverified'; -- unverified, pending, verified

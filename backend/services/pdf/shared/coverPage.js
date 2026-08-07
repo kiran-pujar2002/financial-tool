@@ -7,53 +7,36 @@ function coverPage(doc, report, branding, type, additionalInfo = {}) {
     const firmName = branding?.firm_name || 'Ledger AI';
     const reportType = getReportType(type);
 
-    // Background
+    // Full page background
     doc.rect(0, 0, doc.page.width, doc.page.height).fill(COLORS.lightBg);
 
     // Top bar
-    doc.rect(0, 0, doc.page.width, 8).fill(primaryColor);
+    doc.rect(0, 0, doc.page.width, 6).fill(primaryColor);
 
-    // CONFIDENTIAL
+    // ✅ Main Title - Large and centered
     doc.fillColor(primaryColor)
-        .fontSize(SIZES.small)
-        .font(FONTS.title)
-        .text('CONFIDENTIAL', MARGINS.left, 60, {
-            width: doc.page.width - 100,
-            align: 'center',
-            characterSpacing: 4,
-        });
-
-    // Title
-    doc.fillColor(primaryColor)
-        .fontSize(SIZES.title)
-        .font(FONTS.title)
-        .text(reportType, MARGINS.left, 120, {
+        .fontSize(28)
+        .font('Helvetica-Bold')
+        .text(reportType, MARGINS.left, 80, {
             width: doc.page.width - 100,
             align: 'center',
         });
 
-    // Decorative line
-    doc.moveTo(MARGINS.left, 170)
-        .lineTo(doc.page.width - MARGINS.right, 170)
-        .strokeColor(COLORS.gold)
-        .lineWidth(2)
-        .stroke();
-
-    // Business Name
+    // ✅ Business Name - Large
     doc.fillColor(COLORS.text)
-        .fontSize(26)
-        .font(FONTS.body)
-        .text(report.business_name, MARGINS.left, 200, {
+        .fontSize(24)
+        .font('Helvetica')
+        .text(report.business_name, MARGINS.left, 130, {
             width: doc.page.width - 100,
             align: 'center',
         });
 
-    // Subtitle / Additional info
-    let y = 245;
+    // ✅ Subtitle
+    let y = 180;
     if (additionalInfo.subtitle) {
         doc.fillColor(COLORS.gray)
-            .fontSize(SIZES.subheading)
-            .font(FONTS.body)
+            .fontSize(12)
+            .font('Helvetica')
             .text(additionalInfo.subtitle, MARGINS.left, y, {
                 width: doc.page.width - 100,
                 align: 'center',
@@ -61,9 +44,11 @@ function coverPage(doc, report, branding, type, additionalInfo = {}) {
         y += 30;
     }
 
+    // ✅ Period
     if (additionalInfo.period) {
         doc.fillColor(COLORS.gray)
-            .fontSize(SIZES.body)
+            .fontSize(10)
+            .font('Helvetica')
             .text(additionalInfo.period, MARGINS.left, y, {
                 width: doc.page.width - 100,
                 align: 'center',
@@ -71,35 +56,37 @@ function coverPage(doc, report, branding, type, additionalInfo = {}) {
         y += 25;
     }
 
+    // ✅ Prepared date
     doc.fillColor(COLORS.gray)
-        .fontSize(SIZES.body)
+        .fontSize(10)
+        .font('Helvetica')
         .text(`Prepared: ${formatDate(new Date())}`, MARGINS.left, y, {
             width: doc.page.width - 100,
             align: 'center',
         });
 
-    // Bottom section
-    const bottomY = doc.page.height - 100;
+    // ✅ Disclaimers section (bottom)
+    const bottomY = doc.page.height - 80;
     doc.rect(MARGINS.left, bottomY, doc.page.width - 100, 1).fill(COLORS.border);
 
+    doc.fillColor(COLORS.gray)
+        .fontSize(7)
+        .font('Helvetica')
+        .text('This report was generated with AI-assisted categorization of financial transactions provided by the business owner.', MARGINS.left, bottomY + 10, {
+            width: doc.page.width - 100,
+            align: 'center',
+        });
+    doc.text('It has not been audited, reviewed, or compiled in accordance with ICAI or other professional accounting standards.', MARGINS.left, bottomY + 22, {
+        width: doc.page.width - 100,
+        align: 'center',
+    });
+
+    // Firm name at bottom
     if (branding?.firm_name) {
         doc.fillColor(primaryColor)
-            .fontSize(SIZES.body)
-            .font(FONTS.title)
-            .text(firmName, MARGINS.left, bottomY + 15, {
-                width: doc.page.width - 100,
-                align: 'center',
-            });
-    }
-
-    if (branding?.contact_email || branding?.contact_phone) {
-        const contact = [branding.contact_email, branding.contact_phone]
-            .filter(Boolean)
-            .join('  |  ');
-        doc.fillColor(COLORS.gray)
-            .fontSize(SIZES.small)
-            .font(FONTS.body)
-            .text(contact, MARGINS.left, bottomY + 35, {
+            .fontSize(8)
+            .font('Helvetica-Bold')
+            .text(firmName, MARGINS.left, bottomY + 40, {
                 width: doc.page.width - 100,
                 align: 'center',
             });

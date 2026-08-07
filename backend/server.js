@@ -15,7 +15,11 @@ const valuationRoutes = require('./routes/valuation');
 const cimRoutes = require('./routes/cim');          // ✅ Add this
 const ddRoutes = require('./routes/dd');
 const shareRoutes = require('./routes/share');
-
+const assistantRoutes = require('./routes/assistant');
+const financialModelsRoutes = require('./routes/financialModels');
+const narrativeRoutes = require('./routes/narratives');
+const benchmarkRoutes = require('./routes/benchmarks');
+const marketplaceRoutes = require('./routes/marketplace');
 
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -87,6 +91,13 @@ app.use('/api/valuation', valuationRoutes);    // ✅ Add this
 app.use('/api/cim', cimRoutes);                // ✅ Add this
 app.use('/api/dd', ddRoutes);
 app.use('/api/share', shareRoutes);
+app.use('/api/assistant', assistantRoutes);
+app.use('/api/financial-models', financialModelsRoutes);
+app.use('/api/narratives', narrativeRoutes);
+app.use('/api/benchmarks', benchmarkRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
+
+
 
 
 // ============================================================

@@ -17,6 +17,7 @@ const {
 } = require('../services/aiProcessor');
 const { computeMetrics, buildAddbackSchedule } = require('../utils/calculations');
 const { generatePDF } = require('../services/pdf');
+const { cacheMiddleware } = require('../middleware/cache');
 
 const router = express.Router();
 
@@ -309,7 +310,7 @@ router.get('/trash', authenticate, asyncHandler(async (req, res) => {
 // ============================================================
 // 2️⃣ GET /api/reports - List all active reports
 // ============================================================
-router.get('/', authenticate, asyncHandler(async (req, res) => {
+router.get('/', authenticate,cacheMiddleware(60), asyncHandler(async (req, res) => {
   console.log('📊 Fetching active reports for user:', req.user.id);
   
   const result = await query(
@@ -326,17 +327,37 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // ============================================================
-// 3️⃣ GET /api/reports/:id - Get specific report
+// GET /api/reports/:id - Get specific report (Optimized)
 // ============================================================
 router.get('/:id', authenticate, asyncHandler(async (req, res) => {
-  const report = await getOwnedReport(req.params.id, req.user.id);
+    // ✅ Get report with a single query
+    const report = await getOwnedReport(req.params.id, req.user.id);
 
-  const [txns, addbacks] = await Promise.all([
-    query('SELECT * FROM transactions WHERE report_id = $1 ORDER BY txn_date NULLS LAST', [report.id]),
-    query('SELECT * FROM addback_schedule WHERE report_id = $1 ORDER BY amount DESC', [report.id]),
-  ]);
+    // ✅ Use parallel queries with proper indexes
+    const [txns, addbacks] = await Promise.all([
+        query(
+            `SELECT id, txn_date, description, amount, category, 
+                    is_addback, addback_reason, editor_notes
+             FROM transactions 
+             WHERE report_id = $1 
+             ORDER BY txn_date NULLS LAST, created_at DESC
+             LIMIT 500`, // Limit to prevent huge queries
+            [report.id]
+        ),
+        query(
+            `SELECT id, label, amount, justification, transaction_count
+             FROM addback_schedule 
+             WHERE report_id = $1 
+             ORDER BY amount DESC`,
+            [report.id]
+        ),
+    ]);
 
-  res.json({ report, transactions: txns.rows, addbackSchedule: addbacks.rows });
+    res.json({ 
+        report, 
+        transactions: txns.rows, 
+        addbackSchedule: addbacks.rows 
+    });
 }));
 
 // ============================================================
@@ -556,14 +577,26 @@ router.get('/:id/download', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // ============================================================
-// Helper Functions
+// Helper: Get owned report (Optimized)
 // ============================================================
-
 async function getOwnedReport(reportId, userId) {
-  const result = await query('SELECT * FROM reports WHERE id = $1 AND user_id = $2', [reportId, userId]);
-  if (result.rows.length === 0) throw new HttpError(404, 'Report not found');
-  return result.rows[0];
+    const result = await query(
+        `SELECT id, business_name, industry, status, payment_status, 
+                total_revenue, ebitda, sde, total_addbacks, 
+                ai_summary, report_pdf_path, created_at, updated_at,
+                deleted_at, error_message
+         FROM reports 
+         WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`,
+        [reportId, userId]
+    );
+    
+    if (result.rows.length === 0) {
+        throw new HttpError(404, 'Report not found');
+    }
+    
+    return result.rows[0];
 }
+
 
 async function hasActiveEnterprisePlan(userId) {
   const result = await query(

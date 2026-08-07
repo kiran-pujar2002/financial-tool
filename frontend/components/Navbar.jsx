@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   Palette, // ✅ Added Palette import
+  Store
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -52,6 +53,11 @@ export default function Navbar() {
       name: 'Upload Report',
       href: '/dashboard/upload',
       icon: Upload,
+    },
+        {
+        name: 'Marketplace',  // ✅ Add this
+        href: '/marketplace',
+        icon: Store,          // ✅ You'll need to import Store from lucide-react
     },
   ];
 

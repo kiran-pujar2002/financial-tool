@@ -50,32 +50,25 @@ function formatCurrency(value) {
   return num.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 }
 
-// ✅ Delete Confirmation Modal
+// Delete Confirmation Modal
 function DeleteModal({ isOpen, onClose, onConfirm, count, isBulk = false }) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
-        {/* Icon */}
         <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mx-auto mb-4">
           <AlertTriangle size={28} className="text-red-600" />
         </div>
-
-        {/* Title */}
         <h3 className="text-xl font-bold text-slate-900 text-center mb-2">
           {isBulk ? `Delete ${count} Reports?` : 'Delete Report?'}
         </h3>
-
-        {/* Message */}
         <p className="text-sm text-slate-500 text-center mb-6">
           {isBulk 
             ? `Are you sure you want to move ${count} reports to trash? They can be restored later from the trash page.`
             : 'Are you sure you want to move this report to trash? It can be restored later from the trash page.'
           }
         </p>
-
-        {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={onClose}
@@ -85,7 +78,7 @@ function DeleteModal({ isOpen, onClose, onConfirm, count, isBulk = false }) {
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-medium text-white transition focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-medium text-white transition"
           >
             Move to Trash
           </button>
@@ -122,18 +115,13 @@ export default function DashboardPage() {
     }
   };
 
-  // ✅ Toggle single report selection
   const toggleSelect = (id) => {
     const newSet = new Set(selectedReports);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
     setSelectedReports(newSet);
   };
 
-  // ✅ Toggle select all
   const toggleSelectAll = () => {
     if (selectedReports.size === reports?.length) {
       setSelectedReports(new Set());
@@ -142,21 +130,17 @@ export default function DashboardPage() {
     }
   };
 
-  // ✅ Delete single report
-  const handleDeleteSingle = async (id) => {
+  const handleDeleteSingle = (id) => {
     setShowDeleteModal(true);
-    // Store the ID to delete
     window._deleteTarget = { type: 'single', id };
   };
 
-  // ✅ Delete multiple reports
   const handleDeleteBulk = () => {
     if (selectedReports.size === 0) return;
     setShowDeleteModal(true);
     window._deleteTarget = { type: 'bulk', ids: Array.from(selectedReports) };
   };
 
-  // ✅ Confirm delete
   const confirmDelete = async () => {
     const target = window._deleteTarget;
     if (!target) return;
@@ -209,7 +193,6 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            {/* ✅ Bulk Delete Button */}
             {selectedReports.size > 0 && (
               <button
                 onClick={handleDeleteBulk}
@@ -314,7 +297,6 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {/* Table Header */}
             <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              {/* ✅ Select All Checkbox */}
               <div className="col-span-1 flex items-center">
                 <input
                   type="checkbox"
@@ -354,7 +336,13 @@ export default function DashboardPage() {
                           className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 truncate">{r.business_name}</p>
+                          {/* ✅ FIX: Wrap the business name in a Link */}
+                          <Link 
+                            href={`/reports/${r.id}`}
+                            className="font-semibold text-sm text-slate-900 hover:text-indigo-600 transition"
+                          >
+                            {r.business_name}
+                          </Link>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-slate-500">{r.industry || 'Not specified'}</span>
                             <span className="text-xs text-slate-300">·</span>
@@ -370,7 +358,7 @@ export default function DashboardPage() {
                           <StatusIcon size={12} />
                           {STATUS_LABEL[r.status] || r.status}
                         </span>
-                        {/* ✅ Mobile Delete Button */}
+                        {/* Mobile Delete Button */}
                         <button
                           onClick={() => handleDeleteSingle(r.id)}
                           className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -422,7 +410,6 @@ export default function DashboardPage() {
                         <StatusIcon size={12} />
                         {STATUS_LABEL[r.status] || r.status}
                       </span>
-                      {/* ✅ Desktop Delete Button */}
                       <button
                         onClick={() => handleDeleteSingle(r.id)}
                         className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -438,7 +425,6 @@ export default function DashboardPage() {
         )}
       </main>
 
-      {/* ✅ Delete Confirmation Modal */}
       <DeleteModal
         isOpen={showDeleteModal}
         onClose={() => {

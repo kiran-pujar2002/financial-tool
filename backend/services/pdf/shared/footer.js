@@ -10,6 +10,7 @@ function addPageNumbers(doc, branding) {
     for (let i = 0; i < range.count; i++) {
         try {
             doc.switchToPage(i);
+            // ✅ Only add footer if there's content on the page
             doc.moveTo(MARGINS.left, doc.page.height - 35)
                 .lineTo(doc.page.width - MARGINS.right, doc.page.height - 35)
                 .strokeColor(COLORS.border)

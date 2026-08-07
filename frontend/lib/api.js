@@ -347,6 +347,172 @@ getTrashedReports: () =>
       });
     },
   },
+
+  // Add this to the api object in frontend/lib/api.js
+
+// ============================================
+// AI ASSISTANT APIs
+// ============================================
+
+assistant: {
+    /**
+     * Send a question to the AI assistant
+     * @param {string} reportId - The report ID
+     * @param {string} question - The user's question
+     * @param {string} sessionId - Optional session ID for continuing chat
+     * @returns {Promise} { sessionId, answer, question }
+     */
+    chat: (reportId, question, sessionId = null) =>
+        request('/api/assistant/chat', {
+            method: 'POST',
+            body: JSON.stringify({ reportId, question, sessionId })
+        }),
+
+    /**
+     * Get chat history for a report
+     * @param {string} reportId - The report ID
+     * @returns {Promise} { sessions: [...] }
+     */
+    getHistory: (reportId) =>
+        request(`/api/assistant/history/${reportId}`),
+
+    /**
+     * Delete a chat session
+     * @param {string} sessionId - The session ID
+     * @returns {Promise} { success: true }
+     */
+    deleteSession: (sessionId) =>
+        request(`/api/assistant/session/${sessionId}`, {
+            method: 'DELETE'
+        }),
+},
+
+
+// ============================================
+// FINANCIAL MODELING APIs
+// ============================================
+
+financialModels: {
+    create: (data) =>
+        request('/api/financial-models', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+
+    getByReport: (reportId) =>
+        request(`/api/financial-models/${reportId}`),
+
+    getModel: (modelId) =>
+        request(`/api/financial-models/model/${modelId}`),
+
+    createScenario: (modelId, data) =>
+        request(`/api/financial-models/${modelId}/scenarios`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+
+    regenerate: (scenarioId) =>
+        request(`/api/financial-models/scenarios/${scenarioId}/regenerate`, {
+            method: 'POST'
+        }),
+
+    getDCF: (scenarioId) =>
+        request(`/api/financial-models/scenarios/${scenarioId}/dcf`),
+},
+
+// ============================================
+// NARRATIVE APIs
+// ============================================
+
+narratives: {
+    generate: (data) =>
+        request('/api/narratives/generate', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+    
+    getByReport: (reportId) =>
+        request(`/api/narratives/${reportId}`),
+    
+    update: (narrativeId, data) =>
+        request(`/api/narratives/${narrativeId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        }),
+},
+
+// ============================================
+// BENCHMARK APIs
+// ============================================
+
+benchmarks: {
+    getAll: (industry) => {
+        const query = industry ? `?industry=${encodeURIComponent(industry)}` : '';
+        return request(`/api/benchmarks${query}`);
+    },
+    
+    compare: (reportId) =>
+        request(`/api/benchmarks/compare/${reportId}`),
+    
+    getIndustries: () =>
+        request('/api/benchmarks/industries'),
+},
+// frontend/lib/api.js
+
+// ============================================
+// MARKETPLACE APIs
+// ============================================
+
+marketplace: {
+    // Listings
+    createListing: (data) =>
+        request('/api/marketplace/listings', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+    
+    getListings: (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        const url = `/api/marketplace/listings${queryString ? '?' + queryString : ''}`;
+        console.log('🔍 Fetching listings from:', url);
+        return request(url);
+    },
+    
+    getListing: (id) =>
+        request(`/api/marketplace/listings/${id}`),
+    
+    getMyListings: () =>
+        request('/api/marketplace/my-listings'),
+    
+    // Interests
+    expressInterest: (data) =>
+        request('/api/marketplace/interests', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+    
+    getMyInterests: () =>
+        request('/api/marketplace/my-interests'),
+    
+    // Deal Rooms
+    createDealRoom: (data) =>
+        request('/api/marketplace/deal-rooms', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+    
+    getDealMessages: (dealRoomId) =>
+        request(`/api/marketplace/deal-rooms/${dealRoomId}/messages`),
+    
+    sendDealMessage: (dealRoomId, message) =>
+        request(`/api/marketplace/deal-rooms/${dealRoomId}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({ message })
+        }),
+    
+    getMyDealRooms: () =>
+        request('/api/marketplace/my-deal-rooms'),
+},
 };
 
 export { ApiError };

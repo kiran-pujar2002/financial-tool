@@ -3,25 +3,16 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-// Shared components
 const { coverPage } = require('./shared/coverPage');
 const { addPageNumbers } = require('./shared/footer');
-
-// Generators
 const { generateQOEContent } = require('./generators/qoe');
 const { generateCIMContent } = require('./generators/cim');
 const { generateValuationContent } = require('./generators/valuation');
 const { generateDDContent } = require('./generators/dd');
-
-// Helpers
 const { getReportType } = require('./shared/helpers');
 
-// ============================================================
-// MAIN PDF GENERATOR - Unified Entry Point
-// ============================================================
-
 async function generatePDF({
-    type,           // 'qoe', 'cim', 'valuation', 'dd'
+    type,
     report,
     data,
     branding,
@@ -44,11 +35,14 @@ async function generatePDF({
         const stream = fs.createWriteStream(outputPath);
         doc.pipe(stream);
 
-        // 1. Cover Page
+        console.log('📄 Generating PDF for:', report.business_name);
+        console.log('📄 Type:', type);
+
+        // ✅ Generate cover page FIRST
         coverPage(doc, report, branding, type, data.coverInfo || {});
         doc.addPage();
 
-        // 2. Generate specific content based on type
+        // ✅ Generate content based on type
         const generators = {
             qoe: generateQOEContent,
             cim: generateCIMContent,
@@ -63,11 +57,14 @@ async function generatePDF({
 
         generator(doc, report, data);
 
-        // 3. Add page numbers
+        // ✅ Add page numbers last
         addPageNumbers(doc, branding);
 
         doc.end();
-        stream.on('finish', () => resolve(outputPath));
+        stream.on('finish', () => {
+            console.log('✅ PDF generated:', outputPath);
+            resolve(outputPath);
+        });
         stream.on('error', reject);
     });
 }

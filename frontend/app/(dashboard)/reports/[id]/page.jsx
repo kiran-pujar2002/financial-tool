@@ -29,8 +29,11 @@ import {
   Share2,
   Trash2,
   Menu,
-  X
+  X,
+  Sparkles,
+  Calculator, 
 } from 'lucide-react';
+import ChatAssistant from '@/components/ChatAssistant';
 
 const CATEGORIES = [
   'Revenue', 'COGS', 'Payroll', 'Rent', 'Utilities', 'Marketing',
@@ -60,6 +63,7 @@ export default function ReportDetailPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -249,10 +253,13 @@ export default function ReportDetailPage() {
   const isCompleted = report.status === 'completed';
 
   // ✅ Header buttons data
-  const headerButtons = [
+const headerButtons = [
     { href: `/reports/${report.id}/valuation`, label: 'Valuation', icon: BarChart3, color: 'emerald' },
     { href: `/reports/${report.id}/edit`, label: 'Edit', icon: Edit2, color: 'indigo' },
     { href: `/reports/${report.id}/due-diligence`, label: 'DD', icon: ClipboardCheck, color: 'purple' },
+    { href: `/reports/${report.id}/financial-modeling`, label: 'Modeling', icon: Calculator, color: 'emerald' },
+    { href: `/reports/${report.id}/narratives`, label: 'Narratives', icon: FileText, color: 'sky' },
+    { href: `/reports/${report.id}/benchmarks`, label: 'Benchmarks', icon: BarChart3, color: 'indigo' },
     { 
       onClick: () => setShowShareModal(true), 
       label: 'Share', 
@@ -273,6 +280,7 @@ export default function ReportDetailPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div className='flex items-center justify-between'>
           {/* Top Row - Logo & Mobile Menu */}
           <div className="flex items-center justify-between">
             <div className="flex items-start gap-4">
@@ -302,6 +310,7 @@ export default function ReportDetailPage() {
                   )}
                 </div>
               </div>
+
             </div>
 
             {/* ✅ Mobile Menu Toggle - Shows on small screens */}
@@ -313,6 +322,14 @@ export default function ReportDetailPage() {
               {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
+                                  <button
+    onClick={() => setShowChat(true)}
+    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-medium hover:shadow-lg transition"
+>
+    <Sparkles size={16} />
+    AI Assistant
+</button>
+</div>
 
           {/* ✅ Desktop Buttons - Hidden on mobile */}
           <div className="hidden lg:flex items-center gap-2 mt-4 pt-4 border-t border-slate-200">
@@ -385,6 +402,7 @@ export default function ReportDetailPage() {
               );
             })}
           </div>
+
         </div>
 
         {error && (
@@ -415,6 +433,17 @@ export default function ReportDetailPage() {
             </div>
           </div>
         )}
+
+        {showChat && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="w-full max-w-2xl">
+            <ChatAssistant
+                reportId={reportId}
+                onClose={() => setShowChat(false)}
+            />
+        </div>
+    </div>
+)}
 
         {report.status === 'failed' && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
