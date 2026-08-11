@@ -90,10 +90,10 @@ export default function ProfilePage() {
 
     if (loading || !user) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/30">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
-                    <p className="text-slate-500 text-sm">Loading profile...</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Loading profile...</p>
                 </div>
             </div>
         );
@@ -110,13 +110,13 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 py-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950/30 py-8">
             <div className="max-w-4xl mx-auto px-4 sm:px-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900">My Profile</h1>
-                        <p className="text-sm text-slate-500 mt-1">
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">My Profile</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                             Manage your personal information and account settings
                         </p>
                     </div>
@@ -124,7 +124,7 @@ export default function ProfilePage() {
                         {!isEditing ? (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-medium hover:bg-indigo-100 transition"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
                             >
                                 <Edit2 size={16} />
                                 Edit Profile
@@ -142,7 +142,7 @@ export default function ProfilePage() {
                                     setError(null);
                                     setSuccess(null);
                                 }}
-                                className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition"
+                                className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                             >
                                 <X size={16} />
                                 Cancel
@@ -152,13 +152,13 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Profile Card */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                     {/* Cover / Avatar Section */}
                     <div className="relative">
                         <div className="h-32 bg-gradient-to-r from-indigo-600 to-violet-600"></div>
                         <div className="absolute -bottom-12 left-8">
                             <div className="relative">
-                                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg border-4 border-white dark:border-slate-800">
                                     {getInitials(formData.fullName || user.full_name)}
                                 </div>
                                 <button className="absolute bottom-0 right-0 p-1.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition shadow-lg">
@@ -171,24 +171,24 @@ export default function ProfilePage() {
                     {/* Profile Info */}
                     <div className="pt-16 px-6 pb-6">
                         {error && (
-                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-                                <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={18} />
-                                <p className="text-sm text-red-700">{error}</p>
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 flex items-start gap-3">
+                                <AlertCircle className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" size={18} />
+                                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
                             </div>
                         )}
 
                         {success && (
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-                                <CheckCircle className="text-emerald-600 flex-shrink-0 mt-0.5" size={18} />
-                                <p className="text-sm text-emerald-700">{success}</p>
+                            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 mb-6 flex items-start gap-3">
+                                <CheckCircle className="text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" size={18} />
+                                <p className="text-sm text-emerald-700 dark:text-emerald-300">{success}</p>
                             </div>
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Full Name */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                    <User size={16} className="inline mr-1.5 text-indigo-500" />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    <User size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     Full Name
                                 </label>
                                 {isEditing ? (
@@ -196,11 +196,11 @@ export default function ProfilePage() {
                                         type="text"
                                         value={formData.fullName}
                                         onChange={(e) => handleChange('fullName', e.target.value)}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                         placeholder="Your full name"
                                     />
                                 ) : (
-                                    <p className="text-sm text-slate-900 py-2.5">
+                                    <p className="text-sm text-slate-900 dark:text-white py-2.5">
                                         {formData.fullName || 'Not set'}
                                     </p>
                                 )}
@@ -208,8 +208,8 @@ export default function ProfilePage() {
 
                             {/* Email */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                    <Mail size={16} className="inline mr-1.5 text-indigo-500" />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    <Mail size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     Email Address
                                 </label>
                                 {isEditing ? (
@@ -217,24 +217,24 @@ export default function ProfilePage() {
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => handleChange('email', e.target.value)}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                         placeholder="your@email.com"
                                         disabled
                                     />
                                 ) : (
-                                    <p className="text-sm text-slate-900 py-2.5">
+                                    <p className="text-sm text-slate-900 dark:text-white py-2.5">
                                         {formData.email || 'Not set'}
                                     </p>
                                 )}
                                 {!isEditing && (
-                                    <p className="text-xs text-slate-400 mt-1">Email cannot be changed</p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Email cannot be changed</p>
                                 )}
                             </div>
 
                             {/* Company Name */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                    <Building2 size={16} className="inline mr-1.5 text-indigo-500" />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    <Building2 size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     Company / Brokerage
                                 </label>
                                 {isEditing ? (
@@ -242,11 +242,11 @@ export default function ProfilePage() {
                                         type="text"
                                         value={formData.companyName}
                                         onChange={(e) => handleChange('companyName', e.target.value)}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                         placeholder="Your company name"
                                     />
                                 ) : (
-                                    <p className="text-sm text-slate-900 py-2.5">
+                                    <p className="text-sm text-slate-900 dark:text-white py-2.5">
                                         {formData.companyName || 'Not set'}
                                     </p>
                                 )}
@@ -254,8 +254,8 @@ export default function ProfilePage() {
 
                             {/* Phone */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                    <Phone size={16} className="inline mr-1.5 text-indigo-500" />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    <Phone size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     Phone Number
                                 </label>
                                 {isEditing ? (
@@ -263,11 +263,11 @@ export default function ProfilePage() {
                                         type="tel"
                                         value={formData.phone}
                                         onChange={(e) => handleChange('phone', e.target.value)}
-                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                         placeholder="+91 98765 43210"
                                     />
                                 ) : (
-                                    <p className="text-sm text-slate-900 py-2.5">
+                                    <p className="text-sm text-slate-900 dark:text-white py-2.5">
                                         {formData.phone || 'Not set'}
                                     </p>
                                 )}
@@ -275,18 +275,18 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Account Stats */}
-                        <div className="mt-6 pt-6 border-t border-slate-200">
-                            <h3 className="text-sm font-medium text-slate-700 mb-3">Account Information</h3>
+                        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+                            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Account Information</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="bg-slate-50 rounded-xl p-3">
-                                    <p className="text-xs text-slate-500">Account Type</p>
-                                    <p className="text-sm font-medium text-slate-900 capitalize">
+                                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Account Type</p>
+                                    <p className="text-sm font-medium text-slate-900 dark:text-white capitalize">
                                         {user.plan || 'Free'}
                                     </p>
                                 </div>
-                                <div className="bg-slate-50 rounded-xl p-3">
-                                    <p className="text-xs text-slate-500">Member Since</p>
-                                    <p className="text-sm font-medium text-slate-900">
+                                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Member Since</p>
+                                    <p className="text-sm font-medium text-slate-900 dark:text-white">
                                         {user.created_at ? new Date(user.created_at).toLocaleDateString('en-IN', {
                                             year: 'numeric',
                                             month: 'long',
@@ -294,9 +294,9 @@ export default function ProfilePage() {
                                         }) : 'N/A'}
                                     </p>
                                 </div>
-                                <div className="bg-slate-50 rounded-xl p-3">
-                                    <p className="text-xs text-slate-500">Status</p>
-                                    <p className="text-sm font-medium text-emerald-600 flex items-center gap-1.5">
+                                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Status</p>
+                                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                                         Active
                                     </p>
@@ -306,7 +306,7 @@ export default function ProfilePage() {
 
                         {/* Save Button (when editing) */}
                         {isEditing && (
-                            <div className="mt-6 pt-6 border-t border-slate-200 flex justify-end">
+                            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 flex justify-end">
                                 <button
                                     onClick={handleSave}
                                     disabled={isSaving}
@@ -328,10 +328,10 @@ export default function ProfilePage() {
                         )}
 
                         {/* Logout Button */}
-                        <div className="mt-6 pt-6 border-t border-slate-200">
+                        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition"
+                                className="flex items-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition"
                             >
                                 <LogOut size={18} />
                                 Logout
@@ -341,22 +341,22 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Security Section */}
-                <div className="mt-6 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div className="mt-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                     <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                <Shield className="text-amber-600" size={20} />
+                            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                                <Shield className="text-amber-600 dark:text-amber-400" size={20} />
                             </div>
                             <div>
-                                <h3 className="font-medium text-slate-900">Security</h3>
-                                <p className="text-sm text-slate-500 mt-0.5">
+                                <h3 className="font-medium text-slate-900 dark:text-white">Security</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                                     Manage your password and security settings
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={() => setShowChangePassword(true)}
-                            className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-medium hover:bg-indigo-100 transition"
+                            className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
                         >
                             Change Password →
                         </button>

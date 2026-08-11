@@ -124,7 +124,7 @@ export default function DueDiligencePage() {
         }
     };
 
-    // ✅ Download DD Report - Direct download with auth
+    // Download DD Report - Direct download with auth
     const handleDownload = async () => {
         console.log('Download button clicked');
         if (isDownloading) return;
@@ -138,7 +138,6 @@ export default function DueDiligencePage() {
             toast.dismiss(loadingToast);
 
             if (response.success && response.downloadUrl) {
-                // ✅ Direct download using fetch with auth
                 const token = localStorage.getItem('token');
                 const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${response.downloadUrl}`;
                 
@@ -181,31 +180,31 @@ export default function DueDiligencePage() {
     const getStatusIcon = (status) => {
         switch (status) {
             case 'completed':
-                return <CheckCircle size={18} className="text-emerald-600" />;
+                return <CheckCircle size={18} className="text-emerald-600 dark:text-emerald-400" />;
             case 'in_progress':
-                return <Clock size={18} className="text-amber-600" />;
+                return <Clock size={18} className="text-amber-600 dark:text-amber-400" />;
             case 'blocked':
-                return <AlertCircle size={18} className="text-red-600" />;
+                return <AlertCircle size={18} className="text-red-600 dark:text-red-400" />;
             default:
-                return <Circle size={18} className="text-slate-300" />;
+                return <Circle size={18} className="text-slate-300 dark:text-slate-600" />;
         }
     };
 
     const getStatusBadge = (status) => {
         const config = {
-            completed: 'bg-emerald-100 text-emerald-700',
-            in_progress: 'bg-amber-100 text-amber-700',
-            blocked: 'bg-red-100 text-red-700',
-            pending: 'bg-slate-100 text-slate-600',
+            completed: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
+            in_progress: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+            blocked: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+            pending: 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400',
         };
         return `px-2 py-0.5 rounded-full text-xs font-medium ${config[status] || config.pending}`;
     };
 
     const getPriorityBadge = (priority) => {
         const config = {
-            high: 'bg-red-100 text-red-700',
-            medium: 'bg-amber-100 text-amber-700',
-            low: 'bg-blue-100 text-blue-700',
+            high: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+            medium: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+            low: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
         };
         return `px-2 py-0.5 rounded-full text-xs font-medium ${config[priority] || config.medium}`;
     };
@@ -243,30 +242,30 @@ export default function DueDiligencePage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/30">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
-                    <p className="text-slate-500 text-sm">Loading due diligence checklist...</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Loading due diligence checklist...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 py-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950/30 py-4">
             <div className="max-w-6xl mx-auto px-4 sm:px-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push(`/reports/${reportId}`)}
-                            className="p-2 hover:bg-slate-100 rounded-xl transition"
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
                         >
-                            <ArrowLeft size={20} className="text-slate-600" />
+                            <ArrowLeft size={20} className="text-slate-600 dark:text-slate-400" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-slate-900">Due Diligence</h1>
-                            <p className="text-sm text-slate-500">
+                            <h1 className="text-large font-bold text-slate-900 dark:text-white">Due Diligence</h1>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
                                 {report?.business_name || 'Report'} · Track your due diligence progress
                             </p>
                         </div>
@@ -274,9 +273,9 @@ export default function DueDiligencePage() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={loadData}
-                            className="p-2 hover:bg-slate-100 rounded-xl transition"
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
                         >
-                            <RefreshCw size={18} className="text-slate-500" />
+                            <RefreshCw size={18} className="text-slate-500 dark:text-slate-400" />
                         </button>
                         <button
                             onClick={handleDownload}
@@ -301,40 +300,40 @@ export default function DueDiligencePage() {
                 {/* Stats Cards */}
                 {stats && (
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 text-center">
-                            <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Total</p>
+                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 text-center">
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</p>
                         </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 text-center">
-                            <p className="text-2xl font-bold text-emerald-600">{stats.completed}</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Completed</p>
+                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 text-center">
+                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.completed}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Completed</p>
                         </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 text-center">
-                            <p className="text-2xl font-bold text-amber-600">{stats.inProgress}</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">In Progress</p>
+                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 text-center">
+                            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.inProgress}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">In Progress</p>
                         </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 text-center">
-                            <p className="text-2xl font-bold text-red-600">{stats.blocked}</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Blocked</p>
+                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 text-center">
+                            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.blocked}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Blocked</p>
                         </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 text-center">
-                            <p className="text-2xl font-bold text-indigo-600">{stats.progressPercentage}%</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Progress</p>
+                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 text-center">
+                            <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{stats.progressPercentage}%</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Progress</p>
                         </div>
                     </div>
                 )}
 
                 {/* Filters */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 mb-6">
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <Filter size={16} className="text-slate-400" />
-                            <span className="text-sm font-medium text-slate-700">Filter:</span>
+                            <Filter size={16} className="text-slate-400 dark:text-slate-500" />
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Filter:</span>
                         </div>
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
                             <option value="all">All</option>
                             <option value="pending">Pending</option>
@@ -343,13 +342,13 @@ export default function DueDiligencePage() {
                             <option value="blocked">Blocked</option>
                         </select>
                         <div className="flex-1 relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                             <input
                                 type="text"
                                 placeholder="Search items..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full pl-9 pr-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
                     </div>
@@ -358,31 +357,31 @@ export default function DueDiligencePage() {
                 {/* Checklist */}
                 <div className="space-y-4">
                     {Object.keys(filteredItems).length === 0 ? (
-                        <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-200">
-                            <FileText size={48} className="text-slate-300 mx-auto mb-3" />
-                            <p className="text-slate-500">No items found</p>
-                            <p className="text-sm text-slate-400">Try adjusting your filters</p>
+                        <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                            <FileText size={48} className="text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                            <p className="text-slate-500 dark:text-slate-400">No items found</p>
+                            <p className="text-sm text-slate-400 dark:text-slate-500">Try adjusting your filters</p>
                         </div>
                     ) : (
                         Object.keys(filteredItems).map((category) => (
-                            <div key={category} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div key={category} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                                 <button
                                     onClick={() => toggleCategory(category)}
-                                    className="w-full flex items-center justify-between px-6 py-3 bg-slate-50 hover:bg-slate-100 transition"
+                                    className="w-full flex items-center justify-between px-6 py-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                                 >
                                     <div className="flex items-center gap-3">
                                         {expandedCategories.has(category) ? (
-                                            <ChevronDown size={18} className="text-slate-500" />
+                                            <ChevronDown size={18} className="text-slate-500 dark:text-slate-400" />
                                         ) : (
-                                            <ChevronRight size={18} className="text-slate-500" />
+                                            <ChevronRight size={18} className="text-slate-500 dark:text-slate-400" />
                                         )}
-                                        <span className="font-semibold text-slate-900">{category}</span>
-                                        <span className="text-xs text-slate-500">
+                                        <span className="font-semibold text-slate-900 dark:text-white">{category}</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">
                                             ({filteredItems[category].length} items)
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-slate-500">
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">
                                             {filteredItems[category].filter(i => i.status === 'completed').length}/
                                             {filteredItems[category].length} done
                                         </span>
@@ -390,9 +389,9 @@ export default function DueDiligencePage() {
                                 </button>
 
                                 {expandedCategories.has(category) && (
-                                    <div className="divide-y divide-slate-100">
+                                    <div className="divide-y divide-slate-100 dark:divide-slate-700">
                                         {filteredItems[category].map((item) => (
-                                            <div key={item.id} className="px-6 py-4 hover:bg-slate-50/50 transition">
+                                            <div key={item.id} className="px-6 py-4 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition">
                                                 <div className="flex items-start gap-4">
                                                     <button
                                                         onClick={() => {
@@ -413,9 +412,9 @@ export default function DueDiligencePage() {
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex flex-wrap items-start justify-between gap-2">
                                                             <div>
-                                                                <p className="font-medium text-slate-900">{item.title}</p>
+                                                                <p className="font-medium text-slate-900 dark:text-white">{item.title}</p>
                                                                 {item.description && (
-                                                                    <p className="text-sm text-slate-500 mt-0.5">{item.description}</p>
+                                                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{item.description}</p>
                                                                 )}
                                                             </div>
                                                             <div className="flex items-center gap-2 flex-shrink-0">
@@ -438,20 +437,20 @@ export default function DueDiligencePage() {
                                                                         updateItemNotes(item.id, e.target.value);
                                                                     }
                                                                 }}
-                                                                className="flex-1 min-w-[150px] px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                                className="flex-1 min-w-[150px] px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                             />
                                                             <button
                                                                 onClick={() => {
                                                                     setSelectedItem(item);
                                                                     setShowDocumentModal(true);
                                                                 }}
-                                                                className="text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                                                className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1"
                                                             >
                                                                 <Upload size={14} />
                                                                 Upload
                                                             </button>
                                                             {item.documents_count > 0 && (
-                                                                <span className="text-xs text-slate-500 flex items-center gap-1">
+                                                                <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                                                     <FileText size={12} />
                                                                     {item.documents_count} files
                                                                 </span>
@@ -471,26 +470,26 @@ export default function DueDiligencePage() {
                 {/* Document Upload Modal */}
                 {showDocumentModal && selectedItem && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-slate-900">Upload Document</h3>
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Upload Document</h3>
                                 <button
                                     onClick={() => setShowDocumentModal(false)}
-                                    className="p-1 hover:bg-slate-100 rounded-lg transition"
+                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
                                 >
-                                    <X size={20} className="text-slate-400" />
+                                    <X size={20} className="text-slate-400 dark:text-slate-500" />
                                 </button>
                             </div>
-                            <p className="text-sm text-slate-500 mb-4">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                                 {selectedItem.title}
                             </p>
                             <div
-                                className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 transition"
+                                className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-500 transition"
                                 onClick={() => fileInputRef.current?.click()}
                             >
-                                <Upload size={32} className="text-slate-400 mx-auto mb-2" />
-                                <p className="text-sm text-slate-600">Click to upload or drag & drop</p>
-                                <p className="text-xs text-slate-400 mt-1">PDF, Word, Excel, Images (max 10MB)</p>
+                                <Upload size={32} className="text-slate-400 dark:text-slate-500 mx-auto mb-2" />
+                                <p className="text-sm text-slate-600 dark:text-slate-300">Click to upload or drag & drop</p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">PDF, Word, Excel, Images (max 10MB)</p>
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -505,8 +504,8 @@ export default function DueDiligencePage() {
                             </div>
                             {uploading && (
                                 <div className="mt-4 text-center">
-                                    <RefreshCw size={24} className="animate-spin text-indigo-600 mx-auto" />
-                                    <p className="text-sm text-slate-500 mt-2">Uploading...</p>
+                                    <RefreshCw size={24} className="animate-spin text-indigo-600 dark:text-indigo-400 mx-auto" />
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Uploading...</p>
                                 </div>
                             )}
                         </div>

@@ -31,7 +31,7 @@ import {
   Menu,
   X,
   Sparkles,
-  Calculator, 
+  Calculator,
 } from 'lucide-react';
 import ChatAssistant from '@/components/ChatAssistant';
 
@@ -232,17 +232,16 @@ export default function ReportDetailPage() {
     }
   };
 
-  // ✅ Mobile menu toggle
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
   };
 
   if (authLoading || !user || !report) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/30">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
-          <p className="text-slate-500 text-sm">Loading report...</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Loading report...</p>
         </div>
       </div>
     );
@@ -252,8 +251,7 @@ export default function ReportDetailPage() {
   const isPaid = report.payment_status === 'paid';
   const isCompleted = report.status === 'completed';
 
-  // ✅ Header buttons data
-const headerButtons = [
+  const headerButtons = [
     { href: `/reports/${report.id}/valuation`, label: 'Valuation', icon: BarChart3, color: 'emerald' },
     { href: `/reports/${report.id}/edit`, label: 'Edit', icon: Edit2, color: 'indigo' },
     { href: `/reports/${report.id}/due-diligence`, label: 'DD', icon: ClipboardCheck, color: 'purple' },
@@ -276,71 +274,72 @@ const headerButtons = [
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950/30">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-4">
         {/* Header Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
-        <div className='flex items-center justify-between'>
-          {/* Top Row - Logo & Mobile Menu */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                <FileText className="text-white" size={20} />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{report.business_name}</h1>
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <span className="text-sm text-slate-500 flex items-center gap-1">
-                    <Building2 size={14} />
-                    {report.industry || 'Industry not specified'}
-                  </span>
-                  <span className="text-xs text-slate-300 hidden sm:inline">•</span>
-                  <span className="text-sm text-slate-500 flex items-center gap-1 hidden sm:flex">
-                    <Calendar size={14} />
-                    {new Date(report.created_at).toLocaleDateString()}
-                  </span>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-6">
+          <div className='flex items-center justify-between'>
+            {/* Top Row - Logo & Mobile Menu */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                  <FileText className="text-white" size={20} />
                 </div>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <StatusBadge status={report.status} />
-                  {isPaid && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
-                      <CheckCircle size={12} />
-                      Paid
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{report.business_name}</h1>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <Building2 size={14} />
+                      {report.industry || 'Industry not specified'}
                     </span>
-                  )}
+                    <span className="text-xs text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
+                    <span className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1 hidden sm:flex">
+                      <Calendar size={14} />
+                      {new Date(report.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <StatusBadge status={report.status} />
+                    {isPaid && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+                        <CheckCircle size={12} />
+                        Paid
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* Mobile Menu Toggle */}
+              <button
+                onClick={toggleMobileMenu}
+                className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition"
+                aria-label="Toggle menu"
+              >
+                {showMobileMenu ? <X size={24} className="text-slate-600 dark:text-slate-400" /> : <Menu size={24} className="text-slate-600 dark:text-slate-400" />}
+              </button>
             </div>
 
-            {/* ✅ Mobile Menu Toggle - Shows on small screens */}
             <button
-              onClick={toggleMobileMenu}
-              className="lg:hidden p-2 hover:bg-slate-100 rounded-xl transition"
-              aria-label="Toggle menu"
+              onClick={() => setShowChat(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-medium hover:shadow-lg transition"
             >
-              {showMobileMenu ? <X size={24} /> : <Menu size={24} />}
+              <Sparkles size={16} />
+              AI Assistant
             </button>
           </div>
-                                  <button
-    onClick={() => setShowChat(true)}
-    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-medium hover:shadow-lg transition"
->
-    <Sparkles size={16} />
-    AI Assistant
-</button>
-</div>
 
-          {/* ✅ Desktop Buttons - Hidden on mobile */}
-          <div className="hidden lg:flex items-center gap-2 mt-4 pt-4 border-t border-slate-200">
+          {/* Desktop Buttons */}
+          <div className="hidden lg:flex items-center gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
             {headerButtons.map((btn, index) => {
               const Icon = btn.icon;
               const colorClasses = {
-                emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100',
-                indigo: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100',
-                purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
-                blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
-                red: 'bg-red-50 text-red-600 hover:bg-red-100',
+                emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30',
+                indigo: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30',
+                purple: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30',
+                sky: 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/30',
+                blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30',
+                red: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30',
               };
               return (
                 <div key={index}>
@@ -367,16 +366,17 @@ const headerButtons = [
             })}
           </div>
 
-          {/* ✅ Mobile Buttons - Wraps on small screens */}
-          <div className="flex lg:hidden flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-200">
+          {/* Mobile Buttons */}
+          <div className="flex lg:hidden flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
             {headerButtons.map((btn, index) => {
               const Icon = btn.icon;
               const colorClasses = {
-                emerald: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100',
-                indigo: 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100',
-                purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
-                blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
-                red: 'bg-red-50 text-red-600 hover:bg-red-100',
+                emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30',
+                indigo: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30',
+                purple: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30',
+                sky: 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/30',
+                blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30',
+                red: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30',
               };
               return (
                 <div key={index}>
@@ -402,62 +402,59 @@ const headerButtons = [
               );
             })}
           </div>
-
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={18} />
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" size={18} />
             <div>
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
           </div>
         )}
 
-        {/* Rest of the component remains the same */}
-        {/* ... (Metrics, AI Summary, Add-back Schedule, Transactions, Action Card) ... */}
         {isProcessing && (
-          <div className="bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 rounded-2xl p-8 text-center mb-6">
+          <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/30 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-8 text-center mb-6">
             <div className="flex flex-col items-center gap-3">
               <div className="w-14 h-14 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center">
                 <RefreshCw className="text-white animate-spin" size={24} />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">
+                <h3 className="font-semibold text-slate-900 dark:text-white">
                   {report.status === 'uploaded' && 'Queued for processing…'}
                   {report.status === 'parsing' && 'Reading your file…'}
                   {report.status === 'categorizing' && 'AI is analyzing your transactions…'}
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">This usually takes under a minute. This page updates automatically.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">This usually takes under a minute. This page updates automatically.</p>
               </div>
             </div>
           </div>
         )}
 
         {showChat && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        <div className="w-full max-w-2xl">
-            <ChatAssistant
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="w-full max-w-2xl">
+              <ChatAssistant
                 reportId={reportId}
                 onClose={() => setShowChat(false)}
-            />
-        </div>
-    </div>
-)}
+              />
+            </div>
+          </div>
+        )}
 
         {report.status === 'failed' && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 mb-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+              <AlertCircle className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" size={20} />
               <div>
-                <h3 className="font-semibold text-red-700">Processing Failed</h3>
-                <p className="text-sm text-red-600 mt-1">
+                <h3 className="font-semibold text-red-700 dark:text-red-400">Processing Failed</h3>
+                <p className="text-sm text-red-600 dark:text-red-300 mt-1">
                   {report.error_message?.includes('AI token quota exhausted') ? (
                     <>
                       {report.error_message}
                       <div className="mt-3 space-y-2">
                         <p className="text-sm font-medium">How to fix:</p>
-                        <ol className="text-sm list-decimal list-inside space-y-1 text-red-600">
+                        <ol className="text-sm list-decimal list-inside space-y-1 text-red-600 dark:text-red-300">
                           <li>Go to <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google AI Studio</a></li>
                           <li>Enable billing for your project</li>
                           <li>Wait 1-2 minutes for the quota to refresh</li>
@@ -481,90 +478,90 @@ const headerButtons = [
               <MetricCard
                 label="Revenue"
                 value={money(report.total_revenue)}
-                icon={<TrendingUp size={16} className="text-emerald-600" />}
+                icon={<TrendingUp size={16} className="text-emerald-600 dark:text-emerald-400" />}
                 color="emerald"
               />
               <MetricCard
                 label="Net Income"
                 value={money(report.net_income)}
-                icon={<TrendingDown size={16} className="text-blue-600" />}
+                icon={<TrendingDown size={16} className="text-blue-600 dark:text-blue-400" />}
                 color="blue"
               />
               <MetricCard
                 label="EBITDA"
                 value={money(report.ebitda)}
-                icon={<TrendingUp size={16} className="text-indigo-600" />}
+                icon={<TrendingUp size={16} className="text-indigo-600 dark:text-indigo-400" />}
                 color="indigo"
               />
               <MetricCard
                 label="SDE"
                 value={money(report.sde)}
                 highlight
-                icon={<DollarSign size={16} className="text-violet-600" />}
+                icon={<DollarSign size={16} className="text-violet-600 dark:text-violet-400" />}
                 color="violet"
               />
             </div>
 
             {/* AI Summary */}
             {report.ai_summary && (
-              <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100 p-6 mb-6">
+              <div className="bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-800 p-6 mb-6">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <FileText className="text-white" size={14} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900 mb-1">AI Executive Summary</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">{report.ai_summary}</p>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">AI Executive Summary</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{report.ai_summary}</p>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Add-back schedule */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-slate-900">Add-back Schedule</h2>
-                  <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Add-back Schedule</h2>
+                  <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded-full font-medium">
                     {addbacks.length} items
                   </span>
                 </div>
-                <Tag size={16} className="text-slate-400" />
+                <Tag size={16} className="text-slate-400 dark:text-slate-500" />
               </div>
               {addbacks.length === 0 ? (
                 <div className="px-6 py-8 text-center">
-                  <p className="text-sm text-slate-500">No add-backs currently flagged.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">No add-backs currently flagged.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-200">
+                <div className="divide-y divide-slate-200 dark:divide-slate-700">
                   {addbacks.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between px-6 py-3 hover:bg-slate-50 transition">
+                    <div key={a.id} className="flex items-center justify-between px-6 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
                       <div>
-                        <p className="text-sm font-medium text-slate-900">{a.label}</p>
-                        <p className="text-xs text-slate-500">{a.transaction_count} transaction{a.transaction_count !== 1 ? 's' : ''}</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">{a.label}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{a.transaction_count} transaction{a.transaction_count !== 1 ? 's' : ''}</p>
                       </div>
-                      <p className="text-sm font-semibold text-indigo-600">{money(a.amount)}</p>
+                      <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{money(a.amount)}</p>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 to-violet-50">
-                    <p className="text-sm font-semibold text-slate-900">Total add-backs</p>
-                    <p className="text-lg font-bold text-indigo-600">{money(report.total_addbacks)}</p>
+                  <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/20 dark:to-violet-950/20">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Total add-backs</p>
+                    <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{money(report.total_addbacks)}</p>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Transactions */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-slate-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold text-slate-900">Transactions</h2>
-                    <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Transactions</h2>
+                    <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-medium">
                       {transactions.length}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {isCompleted ? '🔒 Locked on completed reports' : '✏️ Edits update totals immediately'}
                   </p>
                 </div>
@@ -572,37 +569,37 @@ const headerButtons = [
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Description</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Category</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Amount</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Add-back</th>
+                    <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Description</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Category</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Amount</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Add-back</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                     {transactions.map((t) => (
-                      <tr key={t.id} className={t.is_addback ? 'bg-indigo-50/30' : 'hover:bg-slate-50 transition'}>
-                        <td className="px-4 py-3 text-slate-900">{t.description}</td>
+                      <tr key={t.id} className={t.is_addback ? 'bg-indigo-50/30 dark:bg-indigo-950/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/30 transition'}>
+                        <td className="px-4 py-3 text-slate-900 dark:text-white">{t.description}</td>
                         <td className="px-4 py-3">
                           <select
                             value={t.category}
                             disabled={isCompleted || actionPending}
                             onChange={(e) => changeCategory(t, e.target.value)}
-                            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white disabled:opacity-60 disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-60 disabled:bg-slate-50 dark:disabled:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                           >
                             {CATEGORIES.map((c) => (
                               <option key={c} value={c}>{c}</option>
                             ))}
                           </select>
                         </td>
-                        <td className="px-4 py-3 text-right font-medium text-slate-900">{money(t.amount)}</td>
+                        <td className="px-4 py-3 text-right font-medium text-slate-900 dark:text-white">{money(t.amount)}</td>
                         <td className="px-4 py-3 text-center">
                           <input
                             type="checkbox"
                             checked={t.is_addback}
                             disabled={isCompleted || actionPending}
                             onChange={() => toggleAddback(t)}
-                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 dark:bg-slate-700"
                           />
                         </td>
                       </tr>
@@ -613,13 +610,13 @@ const headerButtons = [
             </div>
 
             {/* Action Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h3 className="font-semibold text-slate-900">
+                  <h3 className="font-semibold text-slate-900 dark:text-white">
                     {isCompleted ? '✅ Report is ready' : isPaid ? '💰 Payment received' : '💳 Ready to unlock'}
                   </h3>
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {isCompleted
                       ? 'Download the final PDF report below.'
                       : isPaid
@@ -679,7 +676,7 @@ const headerButtons = [
 
                   <Link
                     href={`/reports/${report.id}/cim`}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl text-sm font-medium hover:bg-emerald-100 transition border border-emerald-200"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition border border-emerald-200 dark:border-emerald-800"
                   >
                     <FileText size={16} />
                     CIM Report
@@ -702,33 +699,33 @@ const headerButtons = [
 
 function MetricCard({ label, value, highlight, icon, color = 'indigo' }) {
   const colorMap = {
-    emerald: 'border-emerald-200 bg-emerald-50',
-    blue: 'border-blue-200 bg-blue-50',
-    indigo: 'border-indigo-200 bg-indigo-50',
-    violet: 'border-violet-200 bg-violet-50',
+    emerald: 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20',
+    blue: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20',
+    indigo: 'border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20',
+    violet: 'border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20',
   };
 
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-all duration-200 ${highlight ? 'border-violet-300 ring-1 ring-violet-300' : ''}`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 hover:shadow-md transition-all duration-200 ${highlight ? 'border-violet-300 dark:border-violet-600 ring-1 ring-violet-300 dark:ring-violet-600' : ''}`}>
       <div className="flex items-center justify-between mb-1">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</p>
         {icon}
       </div>
-      <p className={`text-xl font-bold ${highlight ? 'text-violet-600' : 'text-slate-900'}`}>{value}</p>
+      <p className={`text-xl font-bold ${highlight ? 'text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'}`}>{value}</p>
     </div>
   );
 }
 
 function StatusBadge({ status }) {
   const config = {
-    uploaded: { label: 'Uploaded', icon: Clock, color: 'bg-slate-100 text-slate-700' },
-    parsing: { label: 'Parsing', icon: RefreshCw, color: 'bg-blue-100 text-blue-700' },
-    categorizing: { label: 'Analyzing', icon: RefreshCw, color: 'bg-indigo-100 text-indigo-700' },
-    ready_for_review: { label: 'Needs Review', icon: AlertCircle, color: 'bg-amber-100 text-amber-700' },
-    paid: { label: 'Paid', icon: CheckCircle, color: 'bg-emerald-100 text-emerald-700' },
-    generating_pdf: { label: 'Generating', icon: RefreshCw, color: 'bg-indigo-100 text-indigo-700' },
-    completed: { label: 'Complete', icon: CheckCircle, color: 'bg-emerald-100 text-emerald-700' },
-    failed: { label: 'Failed', icon: AlertCircle, color: 'bg-red-100 text-red-700' },
+    uploaded: { label: 'Uploaded', icon: Clock, color: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300' },
+    parsing: { label: 'Parsing', icon: RefreshCw, color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
+    categorizing: { label: 'Analyzing', icon: RefreshCw, color: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' },
+    ready_for_review: { label: 'Needs Review', icon: AlertCircle, color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' },
+    paid: { label: 'Paid', icon: CheckCircle, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' },
+    generating_pdf: { label: 'Generating', icon: RefreshCw, color: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' },
+    completed: { label: 'Complete', icon: CheckCircle, color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' },
+    failed: { label: 'Failed', icon: AlertCircle, color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' },
   };
 
   const { label, icon: Icon, color } = config[status] || config.uploaded;

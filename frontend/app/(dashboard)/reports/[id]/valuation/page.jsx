@@ -93,7 +93,7 @@ export default function ValuationPage() {
         }
     };
 
-    // ✅ Download function - Same pattern as CIM
+    // Download function with authentication
     const downloadFileFn = async (url) => {
         try {
             const token = localStorage.getItem('token');
@@ -124,7 +124,7 @@ export default function ValuationPage() {
         }
     };
 
-    // ✅ Handle download
+    // Handle download
     const handleDownload = async () => {
         if (!valuation) {
             toast.error('Please calculate a valuation first');
@@ -152,13 +152,11 @@ export default function ValuationPage() {
         }
     };
 
-    // ✅ Regenerate PDF
+    // Regenerate PDF
     const handleRegenerate = async () => {
         setActionPending(true);
         try {
-            // Reset report status
             await api.resetReportStatus(reportId);
-            // Generate fresh PDF
             await api.generatePdf(reportId);
             await loadData();
             toast.success('PDF regenerated successfully!');
@@ -180,10 +178,10 @@ export default function ValuationPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/30">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
-                    <p className="text-slate-500 text-sm">Loading valuation data...</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Loading valuation data...</p>
                 </div>
             </div>
         );
@@ -191,10 +189,10 @@ export default function ValuationPage() {
 
     if (!report) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/30">
                 <div className="text-center">
-                    <AlertCircle className="text-red-600 mx-auto" size={48} />
-                    <h2 className="text-xl font-semibold text-slate-900 mt-4">Report not found</h2>
+                    <AlertCircle className="text-red-600 dark:text-red-400 mx-auto" size={48} />
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-4">Report not found</h2>
                     <button
                         onClick={() => router.push('/dashboard')}
                         className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition"
@@ -209,19 +207,19 @@ export default function ValuationPage() {
     const isCompleted = report.status === 'completed';
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 py-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950/30 py-4">
             <div className="max-w-6xl mx-auto px-4 sm:px-6">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
                     <button
                         onClick={() => router.push(`/reports/${reportId}`)}
-                        className="p-2 hover:bg-slate-100 rounded-xl transition"
+                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
                     >
-                        <ArrowLeft size={20} className="text-slate-600" />
+                        <ArrowLeft size={20} className="text-slate-600 dark:text-slate-400" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Business Valuation</h1>
-                        <p className="text-sm text-slate-500">
+                        <h1 className="text-large font-bold text-slate-900 dark:text-white">Business Valuation</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                             {report.business_name} · {report.industry || 'Industry not specified'}
                         </p>
                     </div>
@@ -229,27 +227,27 @@ export default function ValuationPage() {
 
                 {/* Financial Summary */}
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Revenue</p>
-                        <p className="text-lg font-bold text-slate-900 mt-1">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Revenue</p>
+                        <p className="text-lg font-bold text-slate-900 dark:text-white mt-1">
                             {formatCurrency(report.total_revenue)}
                         </p>
                     </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">EBITDA</p>
-                        <p className="text-lg font-bold text-slate-900 mt-1">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">EBITDA</p>
+                        <p className="text-lg font-bold text-slate-900 dark:text-white mt-1">
                             {formatCurrency(report.ebitda)}
                         </p>
                     </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">SDE</p>
-                        <p className="text-lg font-bold text-slate-900 mt-1">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">SDE</p>
+                        <p className="text-lg font-bold text-slate-900 dark:text-white mt-1">
                             {formatCurrency(report.sde)}
                         </p>
                     </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Add-backs</p>
-                        <p className="text-lg font-bold text-emerald-600 mt-1">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Add-backs</p>
+                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                             {formatCurrency(report.total_addbacks)}
                         </p>
                     </div>
@@ -259,8 +257,8 @@ export default function ValuationPage() {
                     {/* Left - Valuation Calculator */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Valuation Method */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                            <h3 className="text-lg font-semibold text-slate-900 mb-4">Valuation Method</h3>
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Valuation Method</h3>
                             <div className="grid grid-cols-3 gap-3">
                                 {['sde', 'ebitda', 'revenue'].map((m) => (
                                     <button
@@ -268,12 +266,12 @@ export default function ValuationPage() {
                                         onClick={() => setMethod(m)}
                                         className={`p-3 rounded-xl border-2 transition ${
                                             method === m
-                                                ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                                                : 'border-slate-200 hover:border-slate-300'
+                                                ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400'
+                                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                                         }`}
                                     >
-                                        <p className="font-medium text-sm capitalize">{m}</p>
-                                        <p className="text-xs text-slate-500">
+                                        <p className="font-medium text-sm capitalize text-slate-900 dark:text-white">{m}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
                                             {m === 'sde' ? 'SDE Multiple' :
                                              m === 'ebitda' ? 'EBITDA Multiple' :
                                              'Revenue Multiple'}
@@ -283,12 +281,12 @@ export default function ValuationPage() {
                             </div>
 
                             <div className="mt-4">
-                                <label className="flex items-center gap-2 text-sm text-slate-700">
+                                <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                                     <input
                                         type="checkbox"
                                         checked={useCustomMultiple}
                                         onChange={(e) => setUseCustomMultiple(e.target.checked)}
-                                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-700"
                                     />
                                     Use custom multiple
                                 </label>
@@ -301,17 +299,17 @@ export default function ValuationPage() {
                                             step="0.1"
                                             min="0.5"
                                             max="20"
-                                            className="w-32 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-32 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         />
-                                        <span className="ml-2 text-sm text-slate-500">x</span>
+                                        <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">x</span>
                                     </div>
                                 )}
                             </div>
 
                             {industryMultiples.length > 0 && report.industry && (
-                                <div className="mt-4 p-3 bg-slate-50 rounded-xl">
-                                    <p className="text-xs text-slate-500">Industry Suggestion</p>
-                                    <p className="text-sm font-medium text-slate-900">
+                                <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Industry Suggestion</p>
+                                    <p className="text-sm font-medium text-slate-900 dark:text-white">
                                         {report.industry}: {
                                             method === 'sde' ? 
                                                 `${industryMultiples[0].sde_multiple_mid}x` :
@@ -325,8 +323,8 @@ export default function ValuationPage() {
                         </div>
 
                         {/* Risk Factors */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                            <h3 className="text-lg font-semibold text-slate-900 mb-4">Risk Adjustments</h3>
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Risk Adjustments</h3>
                             <div className="space-y-2">
                                 {[
                                     { id: 'customer_concentration', name: 'Customer Concentration', desc: 'High dependency on few customers', factor: 0.05 },
@@ -335,7 +333,7 @@ export default function ValuationPage() {
                                     { id: 'management_risk', name: 'Management Risk', desc: 'Key person dependency', factor: 0.10 },
                                     { id: 'competitive_risk', name: 'Competitive Risk', desc: 'High competition or low barriers', factor: 0.05 },
                                 ].map((risk) => (
-                                    <label key={risk.id} className="flex items-start gap-3 p-2 hover:bg-slate-50 rounded-lg transition cursor-pointer">
+                                    <label key={risk.id} className="flex items-start gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={riskFactors.some(r => r.id === risk.id)}
@@ -346,12 +344,12 @@ export default function ValuationPage() {
                                                     setRiskFactors(riskFactors.filter(r => r.id !== risk.id));
                                                 }
                                             }}
-                                            className="mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                            className="mt-1 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-700"
                                         />
                                         <div>
-                                            <p className="text-sm font-medium text-slate-900">{risk.name}</p>
-                                            <p className="text-xs text-slate-500">{risk.desc}</p>
-                                            <p className="text-xs text-red-600">-{risk.factor * 100}% adjustment</p>
+                                            <p className="text-sm font-medium text-slate-900 dark:text-white">{risk.name}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{risk.desc}</p>
+                                            <p className="text-xs text-red-600 dark:text-red-400">-{risk.factor * 100}% adjustment</p>
                                         </div>
                                     </label>
                                 ))}
@@ -380,41 +378,41 @@ export default function ValuationPage() {
                     {/* Right - Valuation Result */}
                     <div className="lg:col-span-1">
                         {valuation ? (
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-24">
-                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-4">Valuation Result</h3>
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sticky top-24">
+                                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Valuation Result</h3>
                                 
                                 <div className="space-y-4">
                                     <div>
-                                        <p className="text-xs text-slate-500">Selected Value</p>
-                                        <p className="text-3xl font-bold text-indigo-600">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Selected Value</p>
+                                        <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
                                             {formatCurrency(valuation.selected_value)}
                                         </p>
                                     </div>
                                     
                                     <div className="grid grid-cols-3 gap-2">
-                                        <div className="bg-slate-50 rounded-xl p-2 text-center">
-                                            <p className="text-[10px] text-slate-500">Low</p>
-                                            <p className="text-sm font-semibold text-slate-700">
+                                        <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-2 text-center">
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400">Low</p>
+                                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                                                 {formatCurrency(valuation.value_min)}
                                             </p>
                                         </div>
-                                        <div className="bg-indigo-50 rounded-xl p-2 text-center border-2 border-indigo-200">
-                                            <p className="text-[10px] text-indigo-600 font-medium">Mid</p>
-                                            <p className="text-sm font-bold text-indigo-700">
+                                        <div className="bg-indigo-50 dark:bg-indigo-950/30 rounded-xl p-2 text-center border-2 border-indigo-200 dark:border-indigo-800">
+                                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">Mid</p>
+                                            <p className="text-sm font-bold text-indigo-700 dark:text-indigo-400">
                                                 {formatCurrency(valuation.value_mid)}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 rounded-xl p-2 text-center">
-                                            <p className="text-[10px] text-slate-500">High</p>
-                                            <p className="text-sm font-semibold text-slate-700">
+                                        <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-2 text-center">
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400">High</p>
+                                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                                                 {formatCurrency(valuation.value_max)}
                                             </p>
                                         </div>
                                     </div>
                                     
-                                    <div className="pt-4 border-t border-slate-200">
-                                        <p className="text-xs text-slate-500">Method</p>
-                                        <p className="text-sm font-medium capitalize">
+                                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Method</p>
+                                        <p className="text-sm font-medium capitalize text-slate-900 dark:text-white">
                                             {valuation.method} Multiple: {valuation.multiple_used}x
                                         </p>
                                     </div>
@@ -422,7 +420,7 @@ export default function ValuationPage() {
                                     <button
                                         onClick={handleDownload}
                                         disabled={!valuation || isDownloading}
-                                        className="w-full py-2 border border-indigo-200 text-indigo-600 rounded-xl text-sm font-medium hover:bg-indigo-50 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full py-2 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-xl text-sm font-medium hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isDownloading ? (
                                             <>
@@ -441,7 +439,7 @@ export default function ValuationPage() {
                                         <button
                                             onClick={handleRegenerate}
                                             disabled={actionPending}
-                                            className="w-full py-2 border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                                            className="w-full py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50 transition disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                                         >
                                             {actionPending ? (
                                                 <>
@@ -459,10 +457,10 @@ export default function ValuationPage() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 text-center">
-                                <BarChart3 size={48} className="text-slate-300 mx-auto mb-3" />
-                                <h3 className="font-semibold text-slate-900">No Valuation Yet</h3>
-                                <p className="text-sm text-slate-500 mt-1">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 text-center">
+                                <BarChart3 size={48} className="text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                                <h3 className="font-semibold text-slate-900 dark:text-white">No Valuation Yet</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                                     Configure the valuation settings and click calculate.
                                 </p>
                             </div>

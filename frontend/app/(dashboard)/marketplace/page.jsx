@@ -101,7 +101,6 @@ const IMAGE_PLACEHOLDERS = [
     'https://images.unsplash.com/photo-1497366412874-3415097a27e7?w=600&h=400&fit=crop&auto=format',
 ];
 
-// Company placeholder colors for no logo
 const COMPANY_COLORS = [
     'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 
     'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500',
@@ -118,7 +117,6 @@ function getRandomColor(id) {
     return COMPANY_COLORS[hash % COMPANY_COLORS.length];
 }
 
-// Debounce hook
 function useDebounce(value, delay = 500) {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -176,7 +174,6 @@ export default function MarketplacePage() {
 
     const subIndustries = formData.industry ? SUB_INDUSTRIES[formData.industry] || [] : [];
 
-    // Count active filters
     useEffect(() => {
         let count = 0;
         if (selectedIndustry) count++;
@@ -310,166 +307,164 @@ export default function MarketplacePage() {
 
     if (isLoading && !isSearching) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/20">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/30">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 rounded-full border-3 border-indigo-600 border-t-transparent animate-spin"></div>
-                    <p className="text-slate-500 text-sm font-medium">Loading marketplace...</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading marketplace...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950/30 p-4">
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 py-3">
-                        {/* Left */}
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center shadow-md">
-                                    <Store size={18} className="text-white" />
-                                </div>
-                                <div>
-                                    <h1 className="text-lg font-bold text-slate-900">Marketplace</h1>
-                                    <p className="text-xs text-slate-500">{listings.length} listings</p>
-                                </div>
+            <div className="max-w-7xl mx-auto">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 py-3">
+                    {/* Left */}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center shadow-md">
+                                <Store size={18} className="text-white" />
                             </div>
-                            <div className="hidden sm:flex items-center gap-1.5 text-xs">
-                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-medium flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    {listings.filter(l => l.status === 'active').length} active
-                                </span>
+                            <div>
+                                <h1 className="text-lg font-bold text-slate-900 dark:text-white">Marketplace</h1>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{listings.length} listings</p>
                             </div>
                         </div>
-
-                        {/* Right */}
-                        <div className="flex items-center gap-2">
-                            {activeFilterCount > 0 && (
-                                <button
-                                    onClick={clearAllFilters}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition"
-                                >
-                                    <X size={14} />
-                                    Clear All ({activeFilterCount})
-                                </button>
-                            )}
-                            <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className={`p-2 rounded-lg transition ${showFilters ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:bg-slate-100'}`}
-                            >
-                                <SlidersHorizontal size={18} />
-                            </button>
-                            <div className="hidden sm:flex bg-slate-100 rounded-lg p-0.5">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`p-1.5 rounded-md transition ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-white/50'}`}
-                                >
-                                    <Grid3x3 size={16} className="text-slate-600" />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={`p-1.5 rounded-md transition ${viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-white/50'}`}
-                                >
-                                    <LayoutList size={16} className="text-slate-600" />
-                                </button>
-                            </div>
-                            <button
-                                onClick={() => setShowCreateModal(true)}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-lg text-sm font-medium hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
-                            >
-                                <Plus size={16} />
-                                <span className="hidden sm:inline">List Business</span>
-                            </button>
+                        <div className="hidden sm:flex items-center gap-1.5 text-xs">
+                            <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full font-medium flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                {listings.filter(l => l.status === 'active').length} active
+                            </span>
                         </div>
                     </div>
 
-                    {/* Search & Filters */}
-                    <div className="flex flex-col gap-2 pb-3">
-                        <div className="flex items-center gap-2">
-                            <div className="flex-1 relative">
-                                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Search businesses, industries..."
-                                    value={searchTerm}
-                                    onChange={handleSearchChange}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleManualSearch()}
-                                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                />
-                                {isSearching && searchTerm && (
-                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-                                        <Loader2 size={16} className="text-indigo-600 animate-spin" />
-                                    </div>
-                                )}
-                            </div>
+                    {/* Right */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {activeFilterCount > 0 && (
                             <button
-                                onClick={handleManualSearch}
-                                className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition"
+                                onClick={clearAllFilters}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/50 transition"
                             >
-                                Search
+                                <X size={14} />
+                                Clear All ({activeFilterCount})
                             </button>
-                        </div>
-
-                        {/* Filter Bar */}
-                        {showFilters && (
-                            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 animate-slide-down">
-                                <div className="flex-1 min-w-[120px]">
-                                    <select
-                                        value={selectedIndustry}
-                                        onChange={(e) => setSelectedIndustry(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                                    >
-                                        <option value="">All Industries</option>
-                                        {INDUSTRIES.map(ind => (
-                                            <option key={ind.value} value={ind.value}>{ind.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex-1 min-w-[120px]">
-                                    <select
-                                        value={selectedCity}
-                                        onChange={(e) => setSelectedCity(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                                    >
-                                        <option value="">All Cities</option>
-                                        {CITIES.map(city => (
-                                            <option key={city} value={city}>{city}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex-1 min-w-[120px]">
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => { setSortBy(e.target.value); setTimeout(loadListings, 100); }}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                                    >
-                                        <option value="newest">🕐 Newest</option>
-                                        <option value="popular">🔥 Most Viewed</option>
-                                        <option value="price_high">⬆️ Price: High</option>
-                                        <option value="price_low">⬇️ Price: Low</option>
-                                        <option value="oldest">📅 Oldest</option>
-                                    </select>
-                                </div>
-                                <button
-                                    onClick={clearAllFilters}
-                                    className="px-3 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl text-sm transition flex items-center gap-1.5"
-                                >
-                                    <RefreshCw size={14} />
-                                    Reset
-                                </button>
-                            </div>
                         )}
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`p-2 rounded-lg transition ${showFilters ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        >
+                            <SlidersHorizontal size={18} />
+                        </button>
+                        <div className="hidden sm:flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`p-1.5 rounded-md transition ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'hover:bg-white/50 dark:hover:bg-slate-700/50'}`}
+                            >
+                                <Grid3x3 size={16} className="text-slate-600 dark:text-slate-400" />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`p-1.5 rounded-md transition ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'hover:bg-white/50 dark:hover:bg-slate-700/50'}`}
+                            >
+                                <LayoutList size={16} className="text-slate-600 dark:text-slate-400" />
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-lg text-sm font-medium hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                        >
+                            <Plus size={16} />
+                            <span className="hidden sm:inline">List Business</span>
+                        </button>
                     </div>
+                </div>
+
+                {/* Search & Filters */}
+                <div className="flex flex-col gap-2 pb-3">
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 relative">
+                            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                            <input
+                                type="text"
+                                placeholder="Search businesses, industries..."
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                onKeyDown={(e) => e.key === 'Enter' && handleManualSearch()}
+                                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition dark:text-white dark:placeholder-slate-400"
+                            />
+                            {isSearching && searchTerm && (
+                                <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                                    <Loader2 size={16} className="text-indigo-600 animate-spin" />
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={handleManualSearch}
+                            className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition"
+                        >
+                            Search
+                        </button>
+                    </div>
+
+                    {/* Filter Bar */}
+                    {showFilters && (
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 animate-slide-down">
+                            <div className="flex-1 min-w-[120px]">
+                                <select
+                                    value={selectedIndustry}
+                                    onChange={(e) => setSelectedIndustry(e.target.value)}
+                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:text-white"
+                                >
+                                    <option value="">All Industries</option>
+                                    {INDUSTRIES.map(ind => (
+                                        <option key={ind.value} value={ind.value}>{ind.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1 min-w-[120px]">
+                                <select
+                                    value={selectedCity}
+                                    onChange={(e) => setSelectedCity(e.target.value)}
+                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:text-white"
+                                >
+                                    <option value="">All Cities</option>
+                                    {CITIES.map(city => (
+                                        <option key={city} value={city}>{city}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1 min-w-[120px]">
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => { setSortBy(e.target.value); setTimeout(loadListings, 100); }}
+                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:text-white"
+                                >
+                                    <option value="newest">🕐 Newest</option>
+                                    <option value="popular">🔥 Most Viewed</option>
+                                    <option value="price_high">⬆️ Price: High</option>
+                                    <option value="price_low">⬇️ Price: Low</option>
+                                    <option value="oldest">📅 Oldest</option>
+                                </select>
+                            </div>
+                            <button
+                                onClick={clearAllFilters}
+                                className="px-3 py-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-sm transition flex items-center gap-1.5"
+                            >
+                                <RefreshCw size={14} />
+                                Reset
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Listings Grid */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+            <div className="max-w-7xl mx-auto py-6">
                 {/* Results Header */}
                 <div className="flex items-center justify-between mb-4">
-                    <div className="text-sm text-slate-500">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
                         {isSearching ? (
                             <span className="flex items-center gap-2">
                                 <Loader2 size={14} className="animate-spin text-indigo-600" />
@@ -485,7 +480,7 @@ export default function MarketplacePage() {
                     {activeFilterCount > 0 && (
                         <button
                             onClick={clearAllFilters}
-                            className="text-xs text-red-500 hover:text-red-600 font-medium flex items-center gap-1"
+                            className="text-xs text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 font-medium flex items-center gap-1"
                         >
                             <X size={12} />
                             Clear filters
@@ -495,14 +490,14 @@ export default function MarketplacePage() {
 
                 {/* Listings */}
                 {listings.length === 0 ? (
-                    <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
-                        <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Store size={32} className="text-indigo-400" />
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center shadow-sm">
+                        <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Store size={32} className="text-indigo-400 dark:text-indigo-500" />
                         </div>
-                        <h3 className="text-xl font-semibold text-slate-900">
+                        <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
                             {searchTerm ? 'No results found' : 'No listings yet'}
                         </h3>
-                        <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
                             {searchTerm 
                                 ? `No businesses match "${searchTerm}". Try adjusting your search.`
                                 : 'Be the first to list a business for sale and connect with buyers.'
@@ -522,13 +517,11 @@ export default function MarketplacePage() {
                         : 'space-y-3'
                     }>
                         {listings.map((listing, index) => {
-                            const isHovered = hoveredId === listing.id;
                             const isLiked = likedIds.has(listing.id);
                             const hasLogo = listing.logo_url && listing.logo_url !== 'null';
                             const bgColor = getRandomColor(listing.id);
                             const initials = getInitials(listing.business_name);
                             
-                            // ✅ Handle null contact email
                             const hasContactEmail = listing.contact_email && listing.contact_email !== 'null';
                             const hasContactPhone = listing.contact_phone && listing.contact_phone !== 'null';
                             const hasContactName = listing.contact_name && listing.contact_name !== 'null';
@@ -537,11 +530,11 @@ export default function MarketplacePage() {
                                 return (
                                     <div
                                         key={listing.id}
-                                        className="group bg-white rounded-xl border border-slate-200/80 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all duration-300 flex items-center p-3 gap-4"
+                                        className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-700 transition-all duration-300 flex items-center p-3 gap-4"
                                         onMouseEnter={() => setHoveredId(listing.id)}
                                         onMouseLeave={() => setHoveredId(null)}
                                     >
-                                        <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center">
+                                        <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
                                             {hasLogo ? (
                                                 <img src={listing.logo_url} alt="" className="w-full h-full object-cover" />
                                             ) : (
@@ -552,25 +545,25 @@ export default function MarketplacePage() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between">
-                                                <h4 className="font-semibold text-sm text-slate-900">{listing.business_name}</h4>
-                                                <span className="text-sm font-bold text-indigo-600">{formatCurrency(listing.asking_price)}</span>
+                                                <h4 className="font-semibold text-sm text-slate-900 dark:text-white">{listing.business_name}</h4>
+                                                <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{formatCurrency(listing.asking_price)}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                                                <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full">{listing.industry || 'Other'}</span>
+                                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                                                <span className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full">{listing.industry || 'Other'}</span>
                                                 {listing.location && (
                                                     <span className="flex items-center gap-0.5">
                                                         <MapPin size={10} /> {listing.location}
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                                            <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 dark:text-slate-500">
                                                 {listing.revenue && <span>Rev: {formatCurrency(listing.revenue)}</span>}
                                                 {listing.employees && <span>👥 {listing.employees}</span>}
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => router.push(`/marketplace/${listing.id}`)}
-                                            className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-100 transition"
+                                            className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition"
                                         >
                                             View
                                         </button>
@@ -582,12 +575,12 @@ export default function MarketplacePage() {
                             return (
                                 <div
                                     key={listing.id}
-                                    className="group bg-white rounded-xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300 transition-all duration-300"
+                                    className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-300"
                                     onMouseEnter={() => setHoveredId(listing.id)}
                                     onMouseLeave={() => setHoveredId(null)}
                                 >
                                     {/* Image */}
-                                    <div className="relative h-44 overflow-hidden bg-slate-100">
+                                    <div className="relative h-44 overflow-hidden bg-slate-100 dark:bg-slate-700">
                                         {hasLogo ? (
                                             <img
                                                 src={listing.logo_url}
@@ -616,7 +609,7 @@ export default function MarketplacePage() {
                                         </div>
                                         
                                         {/* Price */}
-                                        <div className="absolute bottom-2 right-2 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-lg text-sm font-bold text-slate-900 shadow-lg">
+                                        <div className="absolute bottom-2 right-2 px-3 py-1 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-lg text-sm font-bold text-slate-900 dark:text-white shadow-lg">
                                             {formatCurrency(listing.asking_price)}
                                         </div>
                                         
@@ -631,15 +624,15 @@ export default function MarketplacePage() {
                                     <div className="p-3.5">
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0 flex-1">
-                                                <h4 className="font-semibold text-sm text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+                                                <h4 className="font-semibold text-sm text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                                     {listing.business_name}
                                                 </h4>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-medium truncate max-w-[80px]">
+                                                    <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full font-medium truncate max-w-[80px]">
                                                         {listing.industry || 'Other'}
                                                     </span>
                                                     {listing.sub_industry && (
-                                                        <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-full truncate max-w-[80px]">
+                                                        <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-full truncate max-w-[80px]">
                                                             {listing.sub_industry}
                                                         </span>
                                                     )}
@@ -647,9 +640,9 @@ export default function MarketplacePage() {
                                             </div>
                                             <button
                                                 onClick={() => toggleLike(listing.id)}
-                                                className="p-1.5 rounded-lg hover:bg-slate-100 transition flex-shrink-0"
+                                                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition flex-shrink-0"
                                             >
-                                                <Heart size={14} className={isLiked ? 'fill-red-500 text-red-500' : 'text-slate-400'} />
+                                                <Heart size={14} className={isLiked ? 'fill-red-500 text-red-500' : 'text-slate-400 dark:text-slate-500'} />
                                             </button>
                                         </div>
 
@@ -657,29 +650,29 @@ export default function MarketplacePage() {
                                         {listing.location && (
                                             <button
                                                 onClick={() => openLocation(listing.location)}
-                                                className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 mt-1 transition group/loc"
+                                                className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mt-1 transition group/loc"
                                             >
                                                 <MapPin size={12} className="group-hover/loc:animate-bounce" />
                                                 <span className="hover:underline truncate">{listing.location}</span>
                                             </button>
                                         )}
 
-                                        {/* Contact Info - Show only if available */}
-                                        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
+                                        {/* Contact Info */}
+                                        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400 dark:text-slate-500">
                                             {hasContactName && (
-                                                <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded-full">
+                                                <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-700/50 px-1.5 py-0.5 rounded-full">
                                                     <User size={10} />
                                                     {listing.contact_name}
                                                 </span>
                                             )}
                                             {hasContactPhone && (
-                                                <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded-full">
+                                                <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-700/50 px-1.5 py-0.5 rounded-full">
                                                     <Phone size={10} />
                                                     {listing.contact_phone}
                                                 </span>
                                             )}
                                             {hasContactEmail && (
-                                                <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded-full">
+                                                <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-700/50 px-1.5 py-0.5 rounded-full">
                                                     <Mail size={10} />
                                                     {listing.contact_email}
                                                 </span>
@@ -687,37 +680,37 @@ export default function MarketplacePage() {
                                         </div>
 
                                         {/* Metrics */}
-                                        <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500">
+                                        <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                                             {listing.revenue && (
-                                                <span className="flex items-center gap-0.5 bg-slate-50 px-2 py-0.5 rounded-full">
-                                                    <TrendingUp size={10} className="text-emerald-500" />
+                                                <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-700/50 px-2 py-0.5 rounded-full">
+                                                    <TrendingUp size={10} className="text-emerald-500 dark:text-emerald-400" />
                                                     {formatCurrency(listing.revenue)}
                                                 </span>
                                             )}
                                             {listing.employees && (
-                                                <span className="flex items-center gap-0.5 bg-slate-50 px-2 py-0.5 rounded-full">
-                                                    <Users size={10} className="text-amber-500" />
+                                                <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-700/50 px-2 py-0.5 rounded-full">
+                                                    <Users size={10} className="text-amber-500 dark:text-amber-400" />
                                                     {listing.employees}
                                                 </span>
                                             )}
-                                            <span className="flex items-center gap-0.5 bg-slate-50 px-2 py-0.5 rounded-full text-slate-400">
+                                            <span className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-700/50 px-2 py-0.5 rounded-full text-slate-400 dark:text-slate-500">
                                                 <Clock size={10} />
                                                 {new Date(listing.created_at).toLocaleDateString()}
                                             </span>
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
                                             <button
                                                 onClick={() => router.push(`/marketplace/${listing.id}`)}
-                                                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 transition flex items-center gap-0.5 group/view"
+                                                className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition flex items-center gap-0.5 group/view"
                                             >
                                                 View Details
                                                 <ArrowUpRight size={12} className="group-hover/view:translate-x-0.5 group-hover/view:-translate-y-0.5 transition" />
                                             </button>
                                             <button
                                                 onClick={() => toast.success('Interest expressed! The seller will contact you.')}
-                                                className="text-xs px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition font-medium flex items-center gap-1"
+                                                className="text-xs px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition font-medium flex items-center gap-1"
                                             >
                                                 <Zap size={10} />
                                                 Interested
@@ -734,31 +727,31 @@ export default function MarketplacePage() {
             {/* Create Listing Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 animate-scale-in">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 animate-scale-in">
                         <div className="flex items-center justify-between mb-5">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900">List Your Business</h3>
-                                <p className="text-sm text-slate-500">Fill in the details to list your business</p>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">List Your Business</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Fill in the details to list your business</p>
                             </div>
-                            <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-slate-100 rounded-xl transition">
-                                <X size={20} className="text-slate-400" />
+                            <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition">
+                                <X size={20} className="text-slate-400 dark:text-slate-500" />
                             </button>
                         </div>
 
                         <div className="space-y-4">
                             {/* Logo */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">Business Logo</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Business Logo</label>
                                 <div
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="w-24 h-24 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-indigo-400 transition bg-slate-50 overflow-hidden group"
+                                    className="w-24 h-24 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex items-center justify-center cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-500 transition bg-slate-50 dark:bg-slate-900/50 overflow-hidden group"
                                 >
                                     {selectedImage ? (
                                         <img src={selectedImage} alt="Logo" className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="text-center">
-                                            <Camera size={20} className="text-slate-400 mx-auto group-hover:text-indigo-500 transition" />
-                                            <p className="text-[10px] text-slate-500 mt-1">Upload</p>
+                                            <Camera size={20} className="text-slate-400 dark:text-slate-500 mx-auto group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition" />
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Upload</p>
                                         </div>
                                     )}
                                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
@@ -767,21 +760,21 @@ export default function MarketplacePage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Business Name *</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Business Name *</label>
                                     <input
                                         type="text"
                                         value={formData.businessName}
                                         onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                         placeholder="Acme Hardware"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Industry *</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Industry *</label>
                                     <select
                                         value={formData.industry}
                                         onChange={(e) => setFormData({ ...formData, industry: e.target.value, subIndustry: '' })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                     >
                                         <option value="">Select Industry</option>
                                         {INDUSTRIES.map(ind => (
@@ -793,11 +786,11 @@ export default function MarketplacePage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">City</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City</label>
                                     <select
                                         value={formData.city}
                                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                     >
                                         <option value="">Select City</option>
                                         {CITIES.map(city => (
@@ -806,11 +799,11 @@ export default function MarketplacePage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">State</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">State</label>
                                     <select
                                         value={formData.state}
                                         onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                     >
                                         <option value="">Select State</option>
                                         {STATES.map(state => (
@@ -822,64 +815,64 @@ export default function MarketplacePage() {
 
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Asking Price (₹)</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Asking Price (₹)</label>
                                     <input
                                         type="number"
                                         value={formData.askingPrice}
                                         onChange={(e) => setFormData({ ...formData, askingPrice: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                         placeholder="5,00,000"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Revenue (₹)</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Revenue (₹)</label>
                                     <input
                                         type="number"
                                         value={formData.revenue}
                                         onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Employees</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Employees</label>
                                     <input
                                         type="number"
                                         value={formData.employees}
                                         onChange={(e) => setFormData({ ...formData, employees: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
                                 <textarea
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     rows={2}
-                                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                     placeholder="Describe your business..."
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Contact Name</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contact Name</label>
                                     <input
                                         type="text"
                                         value={formData.contactName}
                                         onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                         placeholder="John Doe"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Contact Phone</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contact Phone</label>
                                     <input
                                         type="text"
                                         value={formData.contactPhone}
                                         onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition dark:bg-slate-900 dark:text-white"
                                         placeholder="+91 98765 43210"
                                     />
                                 </div>
@@ -888,7 +881,7 @@ export default function MarketplacePage() {
                             <div className="flex gap-3 pt-3">
                                 <button
                                     onClick={() => setShowCreateModal(false)}
-                                    className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+                                    className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                                 >
                                     Cancel
                                 </button>

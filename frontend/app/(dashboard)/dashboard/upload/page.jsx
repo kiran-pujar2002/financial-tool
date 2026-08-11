@@ -19,8 +19,10 @@ import {
   ChevronRight,
   Landmark,
   File,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // ✅ Allowed file types
 const ALLOWED_EXTENSIONS = ['.csv', '.xlsx', '.xls'];
@@ -49,19 +51,16 @@ export default function UploadPage() {
 
   // ✅ Validate file
   const validateFile = (selectedFile) => {
-    // Check if file exists
     if (!selectedFile) {
       setFileError('Please select a file');
       return false;
     }
 
-    // Check file size
     if (selectedFile.size > MAX_FILE_SIZE) {
       setFileError(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
       return false;
     }
 
-    // Check file extension
     const extension = '.' + selectedFile.name.split('.').pop().toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
       setFileError(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
@@ -155,7 +154,6 @@ export default function UploadPage() {
     e.preventDefault();
     setError(null);
 
-    // ✅ Validate file before submission
     if (!file) {
       setError('Please select a financial statement file (CSV or Excel).');
       return;
@@ -176,12 +174,11 @@ export default function UploadPage() {
     setSubmitting(true);
     try {
       const { report } = await api.uploadReport(formData);
+      toast.success('Report uploaded successfully! Processing started.');
       router.push(`/reports/${report.id}`);
     } catch (err) {
-      // ✅ Check if it's a validation error from backend
       const errorMsg = err instanceof ApiError ? err.message : 'Upload failed. Please try again.';
       
-      // Check for specific error types
       if (errorMsg.includes('Invalid financial file')) {
         setError('The uploaded file doesn\'t appear to be a valid financial statement. Please ensure you\'re uploading a CSV or Excel file with columns for Date, Description, and Amount.');
       } else if (errorMsg.includes('2000 transactions')) {
@@ -195,14 +192,12 @@ export default function UploadPage() {
     }
   }
 
-  // ✅ Get file size in readable format
   const getFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  // ✅ File Source Helper Component
   const FileSourceHelper = () => {
     const sources = [
       {
@@ -223,10 +218,10 @@ export default function UploadPage() {
     ];
 
     return (
-      <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+      <div className="bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4">
         <button
           onClick={() => setShowFileSource(!showFileSource)}
-          className="w-full flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-800 transition"
+          className="w-full flex items-center gap-2 text-sm font-medium text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
         >
           {showFileSource ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           <HelpCircle size={16} />
@@ -235,19 +230,19 @@ export default function UploadPage() {
 
         {showFileSource && (
           <div className="mt-3 space-y-3">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Your financial statement file can be exported from:
             </p>
             
             {sources.map((source, idx) => (
-              <div key={idx} className="bg-white rounded-lg p-3 border border-blue-100">
-                <div className="flex items-center gap-2 font-medium text-slate-700">
+              <div key={idx} className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-blue-100 dark:border-blue-900/50">
+                <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
                   {source.icon}
                   {source.name}
                 </div>
                 <ul className="mt-1 ml-6 space-y-0.5">
                   {source.items.map((item, i) => (
-                    <li key={i} className="text-sm text-slate-500 list-disc">
+                    <li key={i} className="text-sm text-slate-500 dark:text-slate-400 list-disc">
                       {item}
                     </li>
                   ))}
@@ -255,7 +250,7 @@ export default function UploadPage() {
               </div>
             ))}
 
-            <div className="text-xs text-slate-400 mt-2">
+            <div className="text-xs text-slate-400 dark:text-slate-500 mt-2">
               <strong>Tip:</strong> Look for a CSV or Excel export option in your accounting software.
               The file should have columns like: Date, Description, Amount.
             </div>
@@ -266,33 +261,37 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950/30">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
-        <div className=" mb-4 sm:mb-4">
-          {/* <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 shadow-lg mb-4">
-            <FileSpreadsheet className="text-white" size={28} />
-          </div> */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">New Report</h1>
-          <p className="text-sm sm:text-base text-slate-500 mt-2">
-              Upload a CSV or Excel export of the business&apos;s P&amp;L. We&apos;ll categorize every line item and flag likely add-backs automatically.
-          </p>
+        <div className="mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg flex-shrink-0">
+              <FileSpreadsheet className="text-white" size={20} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">New Report</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Upload a CSV or Excel export of the business's P&L.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200/80 p-6 sm:p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200/80 dark:border-slate-700/80 p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={18} />
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-start gap-3">
+                <AlertCircle className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" size={18} />
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
               </div>
             )}
 
             {/* Business Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="businessName">
-                <Building2 size={16} className="inline mr-1.5 text-indigo-500" />
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" htmlFor="businessName">
+                <Building2 size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                 Business name
               </label>
               <input
@@ -301,15 +300,15 @@ export default function UploadPage() {
                 required
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 placeholder="Acme Hardware LLC"
               />
             </div>
 
             {/* Industry */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="industry">
-                <Briefcase size={16} className="inline mr-1.5 text-indigo-500" />
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" htmlFor="industry">
+                <Briefcase size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                 Industry (optional)
               </label>
               <input
@@ -317,7 +316,7 @@ export default function UploadPage() {
                 type="text"
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 placeholder="Retail / Hardware"
               />
             </div>
@@ -325,8 +324,8 @@ export default function UploadPage() {
             {/* Period Dates */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="periodStart">
-                  <Calendar size={16} className="inline mr-1.5 text-indigo-500" />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" htmlFor="periodStart">
+                  <Calendar size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                   Period start (optional)
                 </label>
                 <input
@@ -334,12 +333,12 @@ export default function UploadPage() {
                   type="date"
                   value={periodStart}
                   onChange={(e) => setPeriodStart(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="periodEnd">
-                  <Calendar size={16} className="inline mr-1.5 text-indigo-500" />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" htmlFor="periodEnd">
+                  <Calendar size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                   Period end (optional)
                 </label>
                 <input
@@ -347,7 +346,7 @@ export default function UploadPage() {
                   type="date"
                   value={periodEnd}
                   onChange={(e) => setPeriodEnd(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                  className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
             </div>
@@ -355,13 +354,13 @@ export default function UploadPage() {
             {/* File Upload */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Financial statement
                 </label>
                 <button
                   type="button"
                   onClick={downloadSampleFile}
-                  className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition"
                 >
                   <Download size={14} />
                   Download Sample
@@ -374,12 +373,12 @@ export default function UploadPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className={`relative border-2 border-dashed rounded-2xl px-6 py-10 text-center cursor-pointer transition-all duration-200 ${
                   dragActive 
-                    ? 'border-indigo-500 bg-indigo-50/50 scale-[1.02]' 
+                    ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/30 scale-[1.02]' 
                     : file 
-                      ? 'border-emerald-500 bg-emerald-50/50' 
+                      ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/30' 
                       : fileError 
-                        ? 'border-red-500 bg-red-50/50'
-                        : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
+                        ? 'border-red-500 bg-red-50/50 dark:bg-red-900/30'
+                        : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
                 <input
@@ -397,16 +396,16 @@ export default function UploadPage() {
                 
                 {file ? (
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <CheckCircle className="text-emerald-600" size={24} />
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                      <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={24} />
                     </div>
-                    <p className="text-sm font-semibold text-emerald-700">{file.name}</p>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{file.name}</p>
+                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                       <span>📊 {getFileSize(file.size)}</span>
-                      <span className="text-slate-300">|</span>
+                      <span className="text-slate-300 dark:text-slate-600">|</span>
                       <button 
                         onClick={handleRemoveFile}
-                        className="text-red-500 hover:text-red-700 font-medium"
+                        className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition"
                       >
                         Remove
                       </button>
@@ -414,22 +413,22 @@ export default function UploadPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <div className={`w-12 h-12 rounded-full ${fileError ? 'bg-red-100' : 'bg-indigo-100'} flex items-center justify-center`}>
+                    <div className={`w-12 h-12 rounded-full ${fileError ? 'bg-red-100 dark:bg-red-900/30' : 'bg-indigo-100 dark:bg-indigo-900/30'} flex items-center justify-center`}>
                       {fileError ? (
-                        <AlertCircle className="text-red-600" size={24} />
+                        <AlertCircle className="text-red-600 dark:text-red-400" size={24} />
                       ) : (
-                        <Upload className="text-indigo-600" size={24} />
+                        <Upload className="text-indigo-600 dark:text-indigo-400" size={24} />
                       )}
                     </div>
                     {fileError ? (
                       <>
-                        <p className="text-sm font-medium text-red-700">{fileError}</p>
-                        <p className="text-xs text-red-500">Click to select a valid file</p>
+                        <p className="text-sm font-medium text-red-700 dark:text-red-400">{fileError}</p>
+                        <p className="text-xs text-red-500 dark:text-red-400">Click to select a valid file</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm font-medium text-slate-700">Drag and drop, or click to browse</p>
-                        <p className="text-xs text-slate-500">CSV or Excel (.xlsx, .xls), up to 25MB</p>
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Drag and drop, or click to browse</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">CSV or Excel (.xlsx, .xls), up to 25MB</p>
                       </>
                     )}
                   </div>
@@ -467,16 +466,16 @@ export default function UploadPage() {
         {/* Trust Indicators */}
         <div className="mt-8 grid grid-cols-3 gap-4 max-w-2xl mx-auto">
           <div className="text-center">
-            <div className="text-xs font-medium text-slate-600">AI Powered</div>
-            <p className="text-[10px] text-slate-400 mt-0.5">Smart categorization</p>
+            <div className="text-xs font-medium text-slate-600 dark:text-slate-400">AI Powered</div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Smart categorization</p>
           </div>
           <div className="text-center">
-            <div className="text-xs font-medium text-slate-600">Secure</div>
-            <p className="text-[10px] text-slate-400 mt-0.5">Encrypted uploads</p>
+            <div className="text-xs font-medium text-slate-600 dark:text-slate-400">Secure</div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Encrypted uploads</p>
           </div>
           <div className="text-center">
-            <div className="text-xs font-medium text-slate-600">Fast</div>
-            <p className="text-[10px] text-slate-400 mt-0.5">Results in minutes</p>
+            <div className="text-xs font-medium text-slate-600 dark:text-slate-400">Fast</div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Results in minutes</p>
           </div>
         </div>
       </main>

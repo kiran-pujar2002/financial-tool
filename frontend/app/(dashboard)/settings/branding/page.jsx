@@ -67,7 +67,6 @@ export default function BrandingSettingsPage() {
     const loadBranding = async () => {
         setIsLoading(true);
         try {
-            // ✅ FIX: Use api.branding.get() instead of api.get()
             const data = await api.branding.get();
             if (data.branding) {
                 setBranding(data.branding);
@@ -93,12 +92,10 @@ export default function BrandingSettingsPage() {
         }
     };
 
-    // Handle form changes
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    // Handle logo upload
     const handleLogoUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -108,7 +105,6 @@ export default function BrandingSettingsPage() {
         formData.append('logo', file);
 
         try {
-            // ✅ FIX: Use api.branding.uploadLogo()
             const result = await api.branding.uploadLogo(formData);
             setFormData(prev => ({ ...prev, logo_url: result.logo_url }));
             toast.success('Logo uploaded successfully!');
@@ -120,10 +116,8 @@ export default function BrandingSettingsPage() {
         }
     };
 
-    // Handle logo removal
     const handleRemoveLogo = async () => {
         try {
-            // ✅ FIX: Use api.branding.removeLogo()
             await api.branding.removeLogo();
             setFormData(prev => ({ ...prev, logo_url: null }));
             toast.success('Logo removed');
@@ -133,11 +127,9 @@ export default function BrandingSettingsPage() {
         }
     };
 
-    // Save branding settings
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // ✅ FIX: Use api.branding.update()
             await api.branding.update(formData);
             toast.success('Branding settings saved!');
         } catch (err) {
@@ -148,39 +140,38 @@ export default function BrandingSettingsPage() {
         }
     };
 
-    // Preview report
     const handlePreview = () => {
         setPreviewMode(!previewMode);
     };
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50/20 dark:from-slate-900 dark:to-indigo-950/30">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
-                    <p className="text-slate-500 text-sm">Loading branding settings...</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Loading branding settings...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 py-12">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950/30 py-12">
             <div className="max-w-4xl mx-auto px-4 sm:px-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900">Branding Settings</h1>
-                        <p className="text-sm text-slate-500 mt-1">
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Branding Settings</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                             Customize how your reports look with your firm's branding
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handlePreview}
-                            className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition"
+                            className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                         >
-                            {previewMode ? <EyeOff size={16} /> : <Eye size={16} />}
+                            {previewMode ? <EyeOff size={16} className="text-slate-600 dark:text-slate-400" /> : <Eye size={16} className="text-slate-600 dark:text-slate-400" />}
                             {previewMode ? 'Hide Preview' : 'Preview'}
                         </button>
                         <button
@@ -205,9 +196,9 @@ export default function BrandingSettingsPage() {
 
                 {/* Preview Card */}
                 {previewMode && (
-                    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 mb-8">
-                        <h3 className="font-semibold text-slate-900 mb-4">Report Preview</h3>
-                        <div className="border rounded-xl p-8 bg-slate-50">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 mb-8">
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Report Preview</h3>
+                        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-8 bg-slate-50 dark:bg-slate-900/50">
                             <div className="max-w-2xl mx-auto">
                                 {/* Cover Page Preview */}
                                 <div 
@@ -234,60 +225,60 @@ export default function BrandingSettingsPage() {
                 )}
 
                 {/* Settings Form */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
                     {/* Firm Details */}
                     <div>
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Firm Details</h3>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Firm Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                    <Building2 size={16} className="inline mr-1.5 text-indigo-500" />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    <Building2 size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     Firm Name
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.firm_name}
                                     onChange={(e) => handleChange('firm_name', e.target.value)}
-                                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                     placeholder="Reyes M&A Advisors"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                    <Mail size={16} className="inline mr-1.5 text-indigo-500" />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    <Mail size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     Contact Email
                                 </label>
                                 <input
                                     type="email"
                                     value={formData.contact_email}
                                     onChange={(e) => handleChange('contact_email', e.target.value)}
-                                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                     placeholder="info@reyesadvisors.com"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                    <Phone size={16} className="inline mr-1.5 text-indigo-500" />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    <Phone size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     Contact Phone
                                 </label>
                                 <input
                                     type="tel"
                                     value={formData.contact_phone}
                                     onChange={(e) => handleChange('contact_phone', e.target.value)}
-                                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                     placeholder="+91 98765 43210"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                    <Globe size={16} className="inline mr-1.5 text-indigo-500" />
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    <Globe size={16} className="inline mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     Website
                                 </label>
                                 <input
                                     type="url"
                                     value={formData.website}
                                     onChange={(e) => handleChange('website', e.target.value)}
-                                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                     placeholder="www.reyesadvisors.com"
                                 />
                             </div>
@@ -295,10 +286,10 @@ export default function BrandingSettingsPage() {
                     </div>
 
                     {/* Logo */}
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Logo</h3>
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Logo</h3>
                         <div className="flex items-center gap-6">
-                            <div className="w-32 h-32 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center bg-slate-50 overflow-hidden">
+                            <div className="w-32 h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl flex items-center justify-center bg-slate-50 dark:bg-slate-900/50 overflow-hidden">
                                 {formData.logo_url ? (
                                     <img 
                                         src={formData.logo_url} 
@@ -306,7 +297,7 @@ export default function BrandingSettingsPage() {
                                         className="w-full h-full object-contain p-2"
                                     />
                                 ) : (
-                                    <Building2 size={48} className="text-slate-300" />
+                                    <Building2 size={48} className="text-slate-300 dark:text-slate-600" />
                                 )}
                             </div>
                             <div>
@@ -320,7 +311,7 @@ export default function BrandingSettingsPage() {
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isUploading}
-                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-sm font-medium hover:bg-indigo-100 transition disabled:opacity-50"
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition disabled:opacity-50"
                                 >
                                     {isUploading ? (
                                         <>
@@ -337,25 +328,25 @@ export default function BrandingSettingsPage() {
                                 {formData.logo_url && (
                                     <button
                                         onClick={handleRemoveLogo}
-                                        className="mt-2 text-sm text-red-600 hover:text-red-700 transition"
+                                        className="mt-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition"
                                     >
                                         Remove logo
                                     </button>
                                 )}
-                                <p className="text-xs text-slate-500 mt-2">PNG, JPG, or SVG • Max 5MB</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">PNG, JPG, or SVG • Max 5MB</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Colors */}
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                            <Palette size={18} className="inline mr-2 text-indigo-500" />
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                            <Palette size={18} className="inline mr-2 text-indigo-500 dark:text-indigo-400" />
                             Colors
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                                     Primary Color
                                 </label>
                                 <div className="flex items-center gap-3">
@@ -363,13 +354,13 @@ export default function BrandingSettingsPage() {
                                         type="color"
                                         value={formData.primary_color}
                                         onChange={(e) => handleChange('primary_color', e.target.value)}
-                                        className="w-12 h-12 rounded-lg cursor-pointer border border-slate-200"
+                                        className="w-12 h-12 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                                     />
                                     <input
                                         type="text"
                                         value={formData.primary_color}
                                         onChange={(e) => handleChange('primary_color', e.target.value)}
-                                        className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="flex-1 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                     />
                                 </div>
                                 <div className="flex gap-1 mt-2">
@@ -377,7 +368,7 @@ export default function BrandingSettingsPage() {
                                         <button
                                             key={color.value}
                                             onClick={() => handleChange('primary_color', color.value)}
-                                            className="w-6 h-6 rounded-full border-2 border-slate-200 hover:border-indigo-500 transition"
+                                            className="w-6 h-6 rounded-full border-2 border-slate-200 dark:border-slate-600 hover:border-indigo-500 dark:hover:border-indigo-400 transition"
                                             style={{ backgroundColor: color.value }}
                                             title={color.name}
                                         />
@@ -385,7 +376,7 @@ export default function BrandingSettingsPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                                     Secondary Color
                                 </label>
                                 <div className="flex items-center gap-3">
@@ -393,18 +384,18 @@ export default function BrandingSettingsPage() {
                                         type="color"
                                         value={formData.secondary_color}
                                         onChange={(e) => handleChange('secondary_color', e.target.value)}
-                                        className="w-12 h-12 rounded-lg cursor-pointer border border-slate-200"
+                                        className="w-12 h-12 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                                     />
                                     <input
                                         type="text"
                                         value={formData.secondary_color}
                                         onChange={(e) => handleChange('secondary_color', e.target.value)}
-                                        className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="flex-1 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                                     Accent Color
                                 </label>
                                 <div className="flex items-center gap-3">
@@ -412,13 +403,13 @@ export default function BrandingSettingsPage() {
                                         type="color"
                                         value={formData.accent_color}
                                         onChange={(e) => handleChange('accent_color', e.target.value)}
-                                        className="w-12 h-12 rounded-lg cursor-pointer border border-slate-200"
+                                        className="w-12 h-12 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                                     />
                                     <input
                                         type="text"
                                         value={formData.accent_color}
                                         onChange={(e) => handleChange('accent_color', e.target.value)}
-                                        className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="flex-1 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                     />
                                 </div>
                             </div>
@@ -426,36 +417,36 @@ export default function BrandingSettingsPage() {
                     </div>
 
                     {/* Template & Options */}
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Template Options</h3>
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Template Options</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                                     Template Layout
                                 </label>
                                 <select
                                     value={formData.template_layout}
                                     onChange={(e) => handleChange('template_layout', e.target.value)}
-                                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                                 >
                                     {TEMPLATES.map(t => (
                                         <option key={t.id} value={t.id}>{t.name}</option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-slate-500 mt-1">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                     {TEMPLATES.find(t => t.id === formData.template_layout)?.description}
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                                     Options
                                 </label>
-                                <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                                <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={formData.show_watermark}
                                         onChange={(e) => handleChange('show_watermark', e.target.checked)}
-                                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500"
                                     />
                                     Show watermark on reports
                                 </label>
@@ -464,16 +455,16 @@ export default function BrandingSettingsPage() {
                     </div>
 
                     {/* Disclaimer */}
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4">Disclaimer</h3>
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Disclaimer</h3>
                         <textarea
                             value={formData.disclaimer_text}
                             onChange={(e) => handleChange('disclaimer_text', e.target.value)}
                             rows={4}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                             placeholder="Add your custom disclaimer text here..."
                         />
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                             This disclaimer will appear on every report. Leave blank to use the default.
                         </p>
                     </div>
